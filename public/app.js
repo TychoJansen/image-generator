@@ -49,6 +49,7 @@ $('word-form').addEventListener('submit', async (e) => {
   try {
     await api('/api/words', { method: 'POST', body: JSON.stringify({ text }) });
     $('word-input').value = '';
+    $('word-input').focus();
     show($('word-error'), '');
     show($('word-message'), `Bedankt! "${text}" is toegevoegd.`);
   } catch (err) {
@@ -97,6 +98,7 @@ $('login-form').addEventListener('submit', async (e) => {
 $('logout-btn').addEventListener('click', async () => {
   await api('/api/logout', { method: 'POST' }).catch(() => {});
   $('result').hidden = true;
+  $('idle').hidden = false;
   show($('generate-error'), '');
   openGenerate();
 });
@@ -108,26 +110,53 @@ async function loadWords() {
     list.innerHTML = '';
     for (const word of words) {
       const li = document.createElement('li');
+      li.className = 'chip';
       const label = document.createElement('label');
       const box = document.createElement('input');
       box.type = 'checkbox';
       box.value = word.id;
       box.checked = true;
-      label.append(box, ' ', word.text);
-      const del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'danger';
-      del.textContent = 'Verwijderen';
-      del.addEventListener('click', () => removeWord(word.id));
-      li.append(label, del);
+      label.append(box, word.text);
+      li.append(label, deleteButton(`Verwijder "${word.text}"`, () => removeWord(word.id)));
       list.append(li);
     }
     $('no-words').hidden = words.length > 0;
     $('generate-btn').disabled = words.length === 0;
+    updateWordCount();
   } catch (err) {
     handleAdminError(err);
   }
 }
+
+function deleteButton(title, onClick) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'icon-btn';
+  btn.title = title;
+  btn.setAttribute('aria-label', title);
+  btn.textContent = '×';
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    onClick();
+  });
+  return btn;
+}
+
+function updateWordCount() {
+  const total = $('word-list').querySelectorAll('input').length;
+  const checked = $('word-list').querySelectorAll('input:checked').length;
+  $('word-count').textContent = total ? `${checked} / ${total} gekozen` : '';
+}
+
+$('word-list').addEventListener('change', updateWordCount);
+
+function selectAllWords(checked) {
+  for (const box of $('word-list').querySelectorAll('input')) box.checked = checked;
+  updateWordCount();
+}
+
+$('select-all').addEventListener('click', () => selectAllWords(true));
+$('select-none').addEventListener('click', () => selectAllWords(false));
 
 async function removeWord(id) {
   try {
@@ -143,10 +172,17 @@ async function loadContext() {
   try {
     const { context } = await api('/api/context');
     $('context').value = context;
+    updateContextCount();
   } catch (err) {
     handleAdminError(err);
   }
 }
+
+function updateContextCount() {
+  $('context-count').textContent = `${$('context').value.length} / ${$('context').maxLength}`;
+}
+
+$('context').addEventListener('input', updateContextCount);
 
 async function saveContext() {
   await api('/api/context', { method: 'PUT', body: JSON.stringify({ context: $('context').value }) });
@@ -189,27 +225,59 @@ async function loadPhotos() {
     for (const photo of photos) {
       const card = document.createElement('div');
       card.className = 'photo';
-      const img = document.createElement('img');
-      img.src = photo.url;
-      img.alt = photo.caption || 'Foto';
       const label = document.createElement('label');
       const box = document.createElement('input');
       box.type = 'checkbox';
       box.value = photo.id;
-      label.append(box, ' ', photo.caption || 'Gebruiken');
-      const del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'danger';
-      del.textContent = 'Verwijderen';
-      del.addEventListener('click', () => removePhoto(photo.id));
-      card.append(img, label, del);
+      const img = document.createElement('img');
+      img.src = photo.url;
+      img.alt = photo.caption || 'Foto';
+      const check = document.createElement('span');
+      check.className = 'check';
+      check.textContent = '✓';
+      const caption = document.createElement('span');
+      caption.className = 'caption';
+      caption.textContent = photo.caption || 'Geen beschrijving';
+      caption.title = photo.caption;
+      label.append(box, img, check, caption);
+      card.append(label, deleteButton('Foto verwijderen', () => removePhoto(photo.id)));
       container.append(card);
     }
     $('no-photos').hidden = photos.length > 0;
+    updatePhotoSelection();
   } catch (err) {
     handleAdminError(err);
   }
 }
+
+// Shows how many photos are picked and which model that means.
+function updatePhotoSelection() {
+  const count = $('photos').querySelectorAll('input:checked').length;
+  $('photo-count').textContent = `${count} / ${MAX_PHOTOS} gekozen`;
+  if (count > 0) {
+    $('model-name').textContent = 'FLUX.2 [klein] 9B';
+    $('model-note').textContent = "betere kwaliteit, gebruikt je foto's · ongeveer 5 per dag gratis";
+  } else {
+    $('model-name').textContent = 'FLUX.1 [schnell]';
+    $('model-note').textContent = 'snel, alleen tekst · ruim 150 per dag gratis';
+  }
+}
+
+$('photos').addEventListener('change', (e) => {
+  const count = $('photos').querySelectorAll('input:checked').length;
+  if (e.target.checked && count > MAX_PHOTOS) {
+    e.target.checked = false;
+    show($('photo-error'), `Je kunt maximaal ${MAX_PHOTOS} foto's tegelijk gebruiken.`);
+  } else {
+    show($('photo-error'), '');
+  }
+  updatePhotoSelection();
+});
+
+$('photo-file').addEventListener('change', () => {
+  const file = $('photo-file').files[0];
+  $('photo-file-name').textContent = file ? file.name : 'Kies een foto';
+});
 
 $('photo-form').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -219,6 +287,7 @@ $('photo-form').addEventListener('submit', async (e) => {
     const image = await resizeToJpeg(file);
     await api('/api/photos', { method: 'POST', body: JSON.stringify({ image, caption: $('photo-caption').value }) });
     $('photo-form').reset();
+    $('photo-file-name').textContent = 'Kies een foto';
     show($('photo-error'), '');
     loadPhotos();
   } catch (err) {
@@ -242,21 +311,36 @@ async function loadGallery() {
     const gallery = $('gallery');
     gallery.innerHTML = '';
     for (const img of images) {
-      const a = document.createElement('a');
-      a.href = img.url;
-      a.target = '_blank';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.title = 'Groot bekijken';
       const el = document.createElement('img');
       el.src = img.url;
-      el.alt = img.filename;
+      el.alt = 'Gegenereerde afbeelding';
       el.loading = 'lazy';
-      a.append(el);
-      gallery.append(a);
+      btn.append(el);
+      btn.addEventListener('click', () => openLightbox(img.url));
+      gallery.append(btn);
     }
     $('gallery-empty').hidden = images.length > 0;
+    $('gallery-count').textContent = images.length ? `${images.length}` : '';
   } catch (err) {
     handleAdminError(err);
   }
 }
+
+// --- Lightbox ---
+function openLightbox(url) {
+  $('lightbox-img').src = url;
+  $('lightbox-download').href = url;
+  $('lightbox').showModal();
+}
+
+$('lightbox-close').addEventListener('click', () => $('lightbox').close());
+// Clicking the dark backdrop (the dialog itself, outside its content) closes it too.
+$('lightbox').addEventListener('click', (e) => {
+  if (e.target === $('lightbox')) $('lightbox').close();
+});
 
 $('generate-btn').addEventListener('click', async () => {
   const ids = [...$('word-list').querySelectorAll('input:checked')].map((b) => Number(b.value));
@@ -267,12 +351,15 @@ $('generate-btn').addEventListener('click', async () => {
 
   show($('generate-error'), '');
   $('generate-btn').disabled = true;
+  $('result').hidden = true;
+  $('idle').hidden = true;
   $('status').hidden = false;
   try {
     await saveContext(); // so unsaved changes in the context box are used too
     const data = await api('/api/generate', { method: 'POST', body: JSON.stringify({ ids, photoIds }) });
     $('result-prompt').textContent = data.prompt;
     $('result-img').src = data.url;
+    $('result-download').href = data.url;
     $('result').hidden = false;
     loadGallery();
   } catch (err) {
@@ -280,6 +367,7 @@ $('generate-btn').addEventListener('click', async () => {
   } finally {
     $('generate-btn').disabled = false;
     $('status').hidden = true;
+    $('idle').hidden = !$('result').hidden;
   }
 });
 

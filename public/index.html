@@ -4,93 +4,182 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Afbeeldingengenerator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <nav>
-    <a href="#words" class="tab" data-tab="words">Woorden</a>
-    <a href="#generate" class="tab" data-tab="generate">Genereren</a>
-  </nav>
+  <header class="site-header">
+    <div class="brand">
+      <svg class="brand-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9z" />
+        <path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z" />
+      </svg>
+      <span>Afbeeldingengenerator</span>
+    </div>
+    <nav class="tabs" aria-label="Tabbladen">
+      <a href="#words" class="tab" data-tab="words">Woorden</a>
+      <a href="#generate" class="tab" data-tab="generate">Genereren</a>
+    </nav>
+  </header>
 
   <main>
     <!-- Words tab: public -->
-    <section id="tab-words">
-      <h1>Voeg een woord toe</h1>
-      <p class="muted">Vul een woord of korte zin in. Die wordt gebruikt om een afbeelding te maken.</p>
-      <form id="word-form">
-        <input id="word-input" type="text" maxlength="50" placeholder="Vul een woord of korte zin in" autocomplete="off" />
-        <button type="submit">Toevoegen</button>
-      </form>
-      <p id="word-message" class="success" hidden></p>
-      <p id="word-error" class="error" hidden></p>
+    <section id="tab-words" class="tab-panel">
+      <div class="card hero">
+        <p class="eyebrow">Doe mee</p>
+        <h1>Voeg een woord toe</h1>
+        <p class="lead">Vul een woord of korte zin in. Alle woorden samen worden gebruikt om een afbeelding te maken.</p>
+        <form id="word-form" class="input-group">
+          <input id="word-input" type="text" maxlength="50" placeholder="Bijv. zonsondergang, taart of 'een rode fiets'" autocomplete="off" />
+          <button type="submit" class="btn primary">Toevoegen</button>
+        </form>
+        <p id="word-message" class="notice success" hidden></p>
+        <p id="word-error" class="notice error" hidden></p>
+        <p class="hint">Je kunt zoveel woorden toevoegen als je wilt. Anderen zien niet wat jij invult.</p>
+      </div>
     </section>
 
     <!-- Generate tab: admin only -->
-    <section id="tab-generate" hidden>
-      <div id="login" hidden>
+    <section id="tab-generate" class="tab-panel" hidden>
+      <div id="login" class="card login" hidden>
+        <div class="lock" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+        </div>
         <h1>Afbeelding genereren</h1>
-        <p class="muted">Dit tabblad is alleen voor de beheerder.</p>
-        <form id="login-form">
+        <p class="lead">Dit tabblad is alleen voor de beheerder.</p>
+        <form id="login-form" class="input-group">
           <input id="password" type="password" placeholder="Beheerderswachtwoord" autocomplete="current-password" />
-          <button type="submit">Inloggen</button>
+          <button type="submit" class="btn primary">Inloggen</button>
         </form>
-        <p id="login-error" class="error" hidden></p>
+        <p id="login-error" class="notice error" hidden></p>
       </div>
 
       <div id="admin" hidden>
-        <div class="header-row">
+        <div class="page-title">
           <h1>Afbeelding genereren</h1>
-          <button id="logout-btn" type="button" class="secondary">Uitloggen</button>
+          <button id="logout-btn" type="button" class="btn ghost">Uitloggen</button>
         </div>
 
-        <ul id="word-list" class="word-list"></ul>
-        <p id="no-words" class="muted" hidden>Nog geen woorden. Deel de link zodat mensen woorden kunnen toevoegen.</p>
+        <div class="layout">
+          <div class="column">
+            <!-- Words -->
+            <div class="card">
+              <div class="card-head">
+                <h2>Woorden</h2>
+                <span id="word-count" class="pill"></span>
+              </div>
+              <div class="card-actions">
+                <button id="select-all" type="button" class="btn small ghost">Alles</button>
+                <button id="select-none" type="button" class="btn small ghost">Geen</button>
+              </div>
+              <ul id="word-list" class="chips"></ul>
+              <p id="no-words" class="empty" hidden>Nog geen woorden. Deel de link zodat mensen woorden kunnen toevoegen.</p>
+            </div>
 
-        <h2>Context</h2>
-        <p class="muted">
-          Leg uit wat bepaalde woorden betekenen en beschrijf de situatie. Dit wordt bij elke afbeelding meegestuurd.
-          Tip: het AI-model begrijpt Engels het best.
-        </p>
-        <textarea id="context" maxlength="1000" rows="5"
-          placeholder="Bijv.: 'Bram' is onze hond, een bruine labrador. 'De Kuil' is ons vakantiehuisje in Drenthe. Het is een verjaardagsfeest in de tuin."></textarea>
-        <div class="row">
-          <button id="save-context" type="button" class="secondary">Context opslaan</button>
-          <span id="context-saved" class="muted" hidden>Opgeslagen</span>
+            <!-- Context -->
+            <div class="card">
+              <div class="card-head">
+                <h2>Context</h2>
+                <span id="context-count" class="pill">0 / 1000</span>
+              </div>
+              <p class="muted">
+                Leg uit wat bepaalde woorden betekenen en beschrijf de situatie. Dit wordt bij elke afbeelding meegestuurd.
+                Tip: het AI-model begrijpt Engels het best.
+              </p>
+              <textarea id="context" maxlength="1000" rows="6"
+                placeholder="Bijv.: 'Bram' is onze hond, een bruine labrador. 'De Kuil' is ons vakantiehuisje in Drenthe. Het is een verjaardagsfeest in de tuin."></textarea>
+              <div class="row">
+                <button id="save-context" type="button" class="btn secondary">Context opslaan</button>
+                <span id="context-saved" class="saved" hidden>✓ Opgeslagen</span>
+              </div>
+              <p id="context-error" class="notice error" hidden></p>
+            </div>
+
+            <!-- Photos -->
+            <div class="card">
+              <div class="card-head">
+                <h2>Foto's</h2>
+                <span id="photo-count" class="pill">0 / 4 gekozen</span>
+              </div>
+              <p class="muted">
+                Upload foto's van mensen, dieren of plekken zodat ze op de afbeelding lijken. Klik op een foto om hem te gebruiken (maximaal 4).
+              </p>
+              <form id="photo-form" class="upload">
+                <label class="dropzone">
+                  <input id="photo-file" type="file" accept="image/jpeg,image/png,image/webp" />
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" /></svg>
+                  <span id="photo-file-name">Kies een foto</span>
+                </label>
+                <input id="photo-caption" type="text" maxlength="100" placeholder="Wie of wat staat erop? (optioneel, bijv. 'Bram, onze hond')" />
+                <button type="submit" class="btn secondary">Uploaden</button>
+              </form>
+              <p id="photo-error" class="notice error" hidden></p>
+              <div id="photos" class="photos"></div>
+              <p id="no-photos" class="empty" hidden>Nog geen foto's.</p>
+            </div>
+          </div>
+
+          <!-- Generate + result -->
+          <div class="column sticky">
+            <div class="card generate-card">
+              <h2>Genereren</h2>
+              <p class="model">
+                Model: <strong id="model-name">FLUX.1 [schnell]</strong>
+                <span id="model-note" class="muted">snel, alleen tekst · ruim 150 per dag gratis</span>
+              </p>
+              <button id="generate-btn" type="button" class="btn primary large">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9z" /></svg>
+                Afbeelding genereren
+              </button>
+              <p id="generate-error" class="notice error" hidden></p>
+
+              <div id="idle" class="placeholder idle">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="9" cy="9" r="2" /><path d="M21 15l-5-5L5 21" /></svg>
+                <span>Je afbeelding verschijnt hier</span>
+              </div>
+
+              <div id="status" class="placeholder" hidden>
+                <span class="spinner"></span>
+                <span>Afbeelding wordt gegenereerd…</span>
+              </div>
+
+              <figure id="result" class="result" hidden>
+                <img id="result-img" alt="Gegenereerde afbeelding" />
+                <figcaption>
+                  <a id="result-download" class="btn small secondary" download>Downloaden</a>
+                  <details>
+                    <summary>Bekijk de prompt</summary>
+                    <p id="result-prompt"></p>
+                  </details>
+                </figcaption>
+              </figure>
+            </div>
+          </div>
         </div>
-        <p id="context-error" class="error" hidden></p>
 
-        <h2>Foto's</h2>
-        <p class="muted">
-          Upload foto's van mensen, dieren of plekken zodat ze op de afbeelding lijken. Vink er maximaal 4 aan om te gebruiken.
-          Met foto's gebruikt de app het betere model FLUX.2 [klein] 9B. Dat kost meer van de gratis daglimiet:
-          ongeveer 5 afbeeldingen per dag met foto's, tegen ruim 150 zonder.
-        </p>
-        <form id="photo-form" class="photo-form">
-          <input id="photo-file" type="file" accept="image/jpeg,image/png,image/webp" />
-          <input id="photo-caption" type="text" maxlength="100" placeholder="Wie of wat staat erop? (optioneel, bijv. 'Bram, onze hond')" />
-          <button type="submit">Uploaden</button>
-        </form>
-        <p id="photo-error" class="error" hidden></p>
-        <div id="photos" class="photos"></div>
-        <p id="no-photos" class="muted" hidden>Nog geen foto's.</p>
-
-        <h2>Genereren</h2>
-
-        <button id="generate-btn" type="button">Afbeelding genereren</button>
-        <p id="status" class="muted" hidden><span class="spinner"></span> Afbeelding wordt gegenereerd, dit duurt meestal een paar seconden…</p>
-        <p id="generate-error" class="error" hidden></p>
-
-        <div id="result" hidden>
-          <p id="result-prompt" class="muted"></p>
-          <img id="result-img" alt="Gegenereerde afbeelding" />
+        <!-- Gallery -->
+        <div class="card gallery-card">
+          <div class="card-head">
+            <h2>Galerij</h2>
+            <span id="gallery-count" class="pill"></span>
+          </div>
+          <div id="gallery" class="gallery"></div>
+          <p id="gallery-empty" class="empty" hidden>Nog geen afbeeldingen gegenereerd.</p>
         </div>
-
-        <h2>Galerij</h2>
-        <div id="gallery" class="gallery"></div>
-        <p id="gallery-empty" class="muted" hidden>Nog geen afbeeldingen gegenereerd.</p>
       </div>
     </section>
   </main>
+
+  <!-- Large view of a gallery image -->
+  <dialog id="lightbox" class="lightbox">
+    <img id="lightbox-img" alt="Afbeelding uit de galerij" />
+    <div class="lightbox-actions">
+      <a id="lightbox-download" class="btn small secondary" download>Downloaden</a>
+      <button id="lightbox-close" type="button" class="btn small ghost">Sluiten</button>
+    </div>
+  </dialog>
 
   <script src="/app.js"></script>
 </body>

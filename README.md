@@ -27,19 +27,35 @@ Cloudflare credentials and admin password stay on the server and are never sent 
 
 On the Generate tab you can steer the image further:
 
-- **Context**: a text box where you explain what certain words mean and describe the situation, for example
-  *"Bram is our dog, a brown labrador. It is a birthday party in the garden."* It is saved and added to every prompt.
+- **Context** has two boxes:
+  - **Altijd meesturen** (always): sent with every image – the style, who must always be in it, what is not allowed
+    (*"A warm wedding illustration. Always include Laureanne and Jerrel. No text in the image."*).
+  - **Woordenlijst** (glossary): one line per name, `Name: description`, e.g. `Whisky: a small brown dog`.
+    A line is only sent when its name appears (as a whole word) in the selected words or in the description of a
+    ticked photo. Several names per line are allowed: `Paris, Dalwhinnie, paarden: two brown horses`.
+    This keeps the image focused: characters that are not asked for are not described, so they are not drawn.
+  - **Prompt bekijken (gratis)** shows the exact prompt for the current selection without generating an image.
   The AI understands English best, but Dutch works too.
 - **Photos**: upload photos of people, animals or places and tick up to 4 to use. You can give each photo a short
   description (*"Bram, our dog"*) so the AI knows who or what it shows. The browser shrinks photos to under
   512×512 pixels before uploading, as the model requires. Photos are stored in `uploads/` and only you can see them.
 
-Which AI model is used:
+### Choosing the AI service
 
-| Photos selected? | Model | Free images per day (approx.) |
-|------------------|-------|-------------------------------|
-| No  | FLUX.1 [schnell] (`@cf/black-forest-labs/flux-1-schnell`) – fast, text only | 150+ |
-| Yes | FLUX.2 [klein] 9B (`@cf/black-forest-labs/flux-2-klein-9b`) – better quality, uses reference photos | about 5 |
+On the Generate tab you choose per image between **Cloudflare** (free) and **OpenAI** (best quality, paid):
+
+| Service | Photos selected? | Model | Cost |
+|---------|------------------|-------|------|
+| Cloudflare | No  | FLUX.1 [schnell] (`@cf/black-forest-labs/flux-1-schnell`) – fast, text only | Free, 150+ per day |
+| Cloudflare | Yes | FLUX.2 [klein] 9B (`@cf/black-forest-labs/flux-2-klein-9b`) – uses reference photos | Free, about 5 per day |
+| OpenAI | Either | `gpt-image-2.5-sunburst` (or the model set in `OPENAI_IMAGE_MODEL`) – follows long prompts well, keeps people recognizable | Paid per image; higher quality costs more |
+
+- OpenAI is optional: without `OPENAI_API_KEY` in `.env`, only Cloudflare works.
+- For OpenAI you also pick a **quality** (low / medium / high). Higher quality looks better but costs more and takes longer.
+- OpenAI can take up to a minute. If it takes longer than the tunnel allows (about 100 seconds), the page says so;
+  the image is still finished on the server and appears in the gallery shortly after.
+- New photo uploads are also stored in a larger version (up to 1024 px) that OpenAI uses. Cloudflare uses the small one.
+- Your choice of service and quality is remembered in your browser.
 
 Only use photos of people who are okay with it.
 
@@ -48,6 +64,7 @@ Only use photos of people who are okay with it.
 - **Node.js 20 or newer**: download the LTS version from https://nodejs.org and install it.
   Check it worked by opening a **new** terminal and running `node --version`.
 - **A free Cloudflare account** (https://dash.cloudflare.com/sign-up) for the image generation.
+- **Optional: an OpenAI account with an API key and credit** (https://platform.openai.com) to also use OpenAI.
 - **Optional:** `cloudflared`, only if people outside your own network should be able to open the app
   (see [Share it over the internet](#share-it-over-the-internet)).
 
@@ -91,6 +108,11 @@ ADMIN_PASSWORD=choose-a-long-password
   use the **Workers AI** template → *Create Token*, and copy the token.
 - **ADMIN_PASSWORD**: a password you make up, for the Generate tab. Use a long one (16+ characters).
   If it is empty, the Generate tab stays locked, even for you.
+- **OPENAI_API_KEY** (optional): on https://platform.openai.com → *API keys* → *Create new secret key*.
+  You need credit on your OpenAI account. Some image models require a one-time organization verification there.
+- **OPENAI_IMAGE_MODEL** (optional): defaults to `gpt-image-2.5-sunburst`, OpenAI's newest image model. If your account
+  has no access to it, use e.g. `gpt-image-2` or `gpt-image-1.5`. With `gpt-image-1` / `gpt-image-1.5` the app also asks
+  OpenAI to keep faces from the reference photos as close as possible (`input_fidelity: high`).
 
 Save the file. `.env` is listed in `.gitignore`, so it is never committed to git.
 
@@ -179,6 +201,9 @@ Good to know:
 | The prompt comes back right after `Server running …` | Another program is using port 3000; the next line says so. Close the other server, or add `PORT=3001` to `.env` and open http://localhost:3001. |
 | "Missing Cloudflare credentials" | `CLOUDFLARE_ACCOUNT_ID` or `CLOUDFLARE_API_TOKEN` is empty in `.env`. Fill it in, save, and restart the server. |
 | "Cloudflare rejected the credentials" | The account ID or token is wrong, or the token lacks the Workers AI permission. Create a new token with the **Workers AI** template. |
+| "OpenAI heeft de API-sleutel geweigerd" | `OPENAI_API_KEY` in `.env` is wrong. Create a new key on platform.openai.com and restart the server. |
+| "OpenAI-tegoed of budgetlimiet is bereikt" | Add credit or raise your budget limit on platform.openai.com. |
+| "geen toegang tot gpt-image-…" | Verify your organization on platform.openai.com, or set `OPENAI_IMAGE_MODEL` to a model you can use. |
 | "Daily free Workers AI limit reached" | You used up today's free generations. Try again after 00:00 UTC. |
 | "ADMIN_PASSWORD is not set" | Add `ADMIN_PASSWORD=…` to `.env` and restart the server. |
 | "Too many wrong passwords" | Wait 15 minutes, or restart the server. |
@@ -203,7 +228,10 @@ For reference; the web page uses these routes. "Admin" routes need you to be log
 | POST   | `/api/words`      | `{ "text": "..." }` – non-empty, max 50 chars    |
 | GET    | `/api/words`      | List words (admin)                               |
 | DELETE | `/api/words/:id`  | Delete a word (admin)                            |
-| POST   | `/api/generate`   | `{ "ids": [1, 2], "photoIds": [3] }` – 1–20 words, 0–4 photos (admin) |
+| POST   | `/api/prompt`     | Same body as `/api/generate`; returns the prompt without generating (admin) |
+| POST   | `/api/generate`   | `{ "ids": [1, 2], "photoIds": [3], "provider": "cloudflare" or "openai", "quality": "low"/"medium"/"high" }` – 1–20 words, 0–4 photos (admin) |
+| GET    | `/api/providers`  | Which services are set up, and the OpenAI model (admin) |
+| DELETE | `/api/images/:filename` | Delete a generated image (admin) |
 | GET/PUT | `/api/context`   | Read / save the context `{ "context": "..." }` (admin) |
 | GET/POST | `/api/photos`   | List / upload a photo `{ "image": "data:image/jpeg;base64,...", "caption": "..." }` (admin) |
 | DELETE | `/api/photos/:id` | Delete a photo (admin)                           |

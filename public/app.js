@@ -1,7 +1,27 @@
 const MAX_WORD_LENGTH = 50;
 const MAX_WORDS = 20;
 const MAX_PHOTOS = 4;
-const MAX_PHOTO_SIDE = 511; // the photo model needs reference images smaller than 512x512
+const MAX_PHOTO_SIDE = 511; // the Cloudflare photo model needs reference images smaller than 512x512
+const MAX_LARGE_PHOTO_SIDE = 1024; // larger copy for OpenAI, which keeps faces more recognizable
+
+// Which image services are set up on the server (filled in after login).
+let providers = { cloudflare: true, openai: false, openaiModel: '' };
+
+// Small per-browser memory for the chosen service and quality; the page works fine without it.
+const remember = {
+  get(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  set(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {}
+  },
+};
 
 const $ = (id) => document.getElementById(id);
 
@@ -64,6 +84,7 @@ async function openGenerate() {
     $('login').hidden = admin;
     $('admin').hidden = !admin;
     if (admin) {
+      loadProviders();
       loadShare();
       loadWords();
       loadContext();
@@ -152,8 +173,8 @@ async function loadWords() {
       list.append(li);
     }
     $('no-words').hidden = words.length > 0;
-    $('generate-btn').disabled = words.length === 0;
     updateWordCount();
+    updateModelInfo();
   } catch (err) {
     handleAdminError(err);
   }
@@ -201,8 +222,9 @@ async function removeWord(id) {
 // --- Context ---
 async function loadContext() {
   try {
-    const { context } = await api('/api/context');
+    const { context, glossary } = await api('/api/context');
     $('context').value = context;
+    $('glossary').value = glossary;
     updateContextCount();
   } catch (err) {
     handleAdminError(err);
@@ -211,12 +233,17 @@ async function loadContext() {
 
 function updateContextCount() {
   $('context-count').textContent = `${$('context').value.length} / ${$('context').maxLength}`;
+  $('glossary-count').textContent = `${$('glossary').value.length} / ${$('glossary').maxLength}`;
 }
 
 $('context').addEventListener('input', updateContextCount);
+$('glossary').addEventListener('input', updateContextCount);
 
 async function saveContext() {
-  await api('/api/context', { method: 'PUT', body: JSON.stringify({ context: $('context').value }) });
+  await api('/api/context', {
+    method: 'PUT',
+    body: JSON.stringify({ context: $('context').value, glossary: $('glossary').value }),
+  });
 }
 
 $('save-context').addEventListener('click', async () => {
@@ -232,20 +259,24 @@ $('save-context').addEventListener('click', async () => {
 });
 
 // --- Photos ---
-// Shrinks the photo in the browser to a JPEG of at most 511x511, as the photo model requires.
-async function resizeToJpeg(file) {
+// Shrinks the photo in the browser to JPEGs: a small one (max 511x511, for Cloudflare)
+// and a large one (max 1024x1024, for OpenAI).
+async function resizePhoto(file) {
   let bitmap;
   try {
     bitmap = await createImageBitmap(file);
   } catch {
     throw new Error('Deze foto kan niet worden gelezen. Gebruik een JPG- of PNG-bestand.');
   }
-  const scale = Math.min(1, MAX_PHOTO_SIDE / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/jpeg', 0.9);
+  const toJpeg = (maxSide) => {
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.9);
+  };
+  return { image: toJpeg(MAX_PHOTO_SIDE), large: toJpeg(MAX_LARGE_PHOTO_SIDE) };
 }
 
 async function loadPhotos() {
@@ -281,18 +312,59 @@ async function loadPhotos() {
   }
 }
 
-// Shows how many photos are picked and which model that means.
+// Shows how many photos are picked.
 function updatePhotoSelection() {
   const count = $('photos').querySelectorAll('input:checked').length;
   $('photo-count').textContent = `${count} / ${MAX_PHOTOS} gekozen`;
-  if (count > 0) {
+  updateModelInfo();
+}
+
+// --- Service choice (Cloudflare or OpenAI) ---
+function selectedProvider() {
+  return document.querySelector('input[name="provider"]:checked').value;
+}
+
+async function loadProviders() {
+  try {
+    providers = await api('/api/providers');
+  } catch (err) {
+    return handleAdminError(err);
+  }
+  const saved = remember.get('provider');
+  if (saved) document.querySelector(`input[name="provider"][value="${saved}"]`).checked = true;
+  const quality = remember.get('quality');
+  if (quality) $('quality').value = quality;
+  updateModelInfo();
+}
+
+// Shows which model will be used, based on the chosen service and whether photos are picked.
+function updateModelInfo() {
+  const withPhotos = $('photos').querySelectorAll('input:checked').length > 0;
+  const openai = selectedProvider() === 'openai';
+  $('quality-row').hidden = !openai;
+  $('openai-missing').hidden = !openai || providers.openai;
+  $('generate-btn').disabled = $('word-list').querySelectorAll('input').length === 0 || (openai && !providers.openai);
+
+  if (openai) {
+    $('model-name').textContent = providers.openaiModel || 'OpenAI';
+    $('model-note').textContent = `${withPhotos ? "gebruikt je foto's · " : ''}betaald per afbeelding · kan tot een minuut duren`;
+  } else if (withPhotos) {
     $('model-name').textContent = 'FLUX.2 [klein] 9B';
-    $('model-note').textContent = "betere kwaliteit, gebruikt je foto's · ongeveer 5 per dag gratis";
+    $('model-note').textContent = "gebruikt je foto's · ongeveer 5 per dag gratis";
   } else {
     $('model-name').textContent = 'FLUX.1 [schnell]';
     $('model-note').textContent = 'snel, alleen tekst · ruim 150 per dag gratis';
   }
 }
+
+for (const radio of document.querySelectorAll('input[name="provider"]')) {
+  radio.addEventListener('change', () => {
+    remember.set('provider', selectedProvider());
+    updateModelInfo();
+  });
+}
+
+$('quality').addEventListener('change', () => remember.set('quality', $('quality').value));
 
 $('photos').addEventListener('change', (e) => {
   const count = $('photos').querySelectorAll('input:checked').length;
@@ -315,8 +387,11 @@ $('photo-form').addEventListener('submit', async (e) => {
   const file = $('photo-file').files[0];
   if (!file) return show($('photo-error'), 'Kies eerst een foto.');
   try {
-    const image = await resizeToJpeg(file);
-    await api('/api/photos', { method: 'POST', body: JSON.stringify({ image, caption: $('photo-caption').value }) });
+    const { image, large } = await resizePhoto(file);
+    await api('/api/photos', {
+      method: 'POST',
+      body: JSON.stringify({ image, large, caption: $('photo-caption').value }),
+    });
     $('photo-form').reset();
     $('photo-file-name').textContent = 'Kies een foto';
     show($('photo-error'), '');
@@ -401,30 +476,71 @@ $('lightbox').addEventListener('click', (e) => {
   if (e.target === $('lightbox')) $('lightbox').close();
 });
 
-$('generate-btn').addEventListener('click', async () => {
+// The current selection on the Generate tab, or null (with an error shown) if it is not valid.
+function currentSelection() {
   const ids = [...$('word-list').querySelectorAll('input:checked')].map((b) => Number(b.value));
-  if (ids.length === 0) return show($('generate-error'), 'Selecteer minstens één woord.');
-  if (ids.length > MAX_WORDS) return show($('generate-error'), `Selecteer maximaal ${MAX_WORDS} woorden.`);
   const photoIds = [...$('photos').querySelectorAll('input:checked')].map((b) => Number(b.value));
-  if (photoIds.length > MAX_PHOTOS) return show($('generate-error'), `Selecteer maximaal ${MAX_PHOTOS} foto's.`);
+  let error = '';
+  if (ids.length === 0) error = 'Selecteer minstens één woord.';
+  else if (ids.length > MAX_WORDS) error = `Selecteer maximaal ${MAX_WORDS} woorden.`;
+  else if (photoIds.length > MAX_PHOTOS) error = `Selecteer maximaal ${MAX_PHOTOS} foto's.`;
+  if (error) {
+    show($('generate-error'), error);
+    return null;
+  }
+  return { ids, photoIds, provider: selectedProvider(), quality: $('quality').value };
+}
 
+$('preview-btn').addEventListener('click', async () => {
+  const selection = currentSelection();
+  if (!selection) return;
+  show($('generate-error'), '');
+  try {
+    await saveContext();
+    const { prompt } = await api('/api/prompt', { method: 'POST', body: JSON.stringify(selection) });
+    $('preview').textContent = prompt;
+    $('preview').hidden = false;
+  } catch (err) {
+    handleAdminError(err);
+  }
+});
+
+$('generate-btn').addEventListener('click', async () => {
+  const selection = currentSelection();
+  if (!selection) return;
+  const { provider } = selection;
+
+  $('preview').hidden = true;
   show($('generate-error'), '');
   $('generate-btn').disabled = true;
   $('result').hidden = true;
   $('idle').hidden = true;
+  $('status-text').textContent =
+    provider === 'openai' ? 'Afbeelding wordt gegenereerd, dit kan tot een minuut duren…' : 'Afbeelding wordt gegenereerd…';
   $('status').hidden = false;
   try {
     await saveContext(); // so unsaved changes in the context box are used too
-    const data = await api('/api/generate', { method: 'POST', body: JSON.stringify({ ids, photoIds }) });
+    const data = await api('/api/generate', {
+      method: 'POST',
+      body: JSON.stringify(selection),
+    });
     $('result-prompt').textContent = data.prompt;
     $('result-img').src = data.url;
     $('result-download').href = data.url;
     $('result').hidden = false;
     loadGallery();
   } catch (err) {
-    handleAdminError(err);
+    // The tunnel cuts off requests that take longer than about 100 seconds (no JSON reply, e.g. 524).
+    // The server keeps going and saves the image, so check the gallery again a bit later.
+    if ([502, 504, 524].includes(err.status) && err.message.startsWith('Verzoek mislukt')) {
+      show($('generate-error'), 'Het genereren duurt langer dan de verbinding toelaat. De afbeelding wordt op de achtergrond afgemaakt en verschijnt zo vanzelf in de galerij.');
+      setTimeout(loadGallery, 30000);
+      setTimeout(loadGallery, 90000);
+    } else {
+      handleAdminError(err);
+    }
   } finally {
-    $('generate-btn').disabled = false;
+    updateModelInfo();
     $('status').hidden = true;
     $('idle').hidden = !$('result').hidden;
   }

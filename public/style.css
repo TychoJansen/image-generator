@@ -237,7 +237,34 @@ input:focus, textarea:focus {
   box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
-textarea { resize: vertical; min-height: 120px; }
+textarea { resize: vertical; min-height: 96px; }
+
+.field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+}
+.field-head label { font-weight: 600; }
+.help { margin: 2px 0 8px; color: var(--muted); font-size: 0.85rem; }
+.help code { font-size: 0.85em; padding: 1px 5px; border-radius: 5px; background: var(--surface-2); }
+
+.preview {
+  margin: 0;
+  max-height: 320px;
+  overflow: auto;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+#preview-btn { justify-self: start; }
 
 .input-group { display: flex; gap: 8px; }
 .input-group input { flex: 1; min-width: 0; font-size: 1.02rem; }
@@ -443,6 +470,36 @@ textarea { resize: vertical; min-height: 120px; }
 /* ---------- Generate + result ---------- */
 .generate-card { display: grid; gap: 14px; }
 .generate-card h2 { margin-bottom: -4px; }
+.provider { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.provider label { cursor: pointer; }
+.provider input { position: absolute; opacity: 0; pointer-events: none; }
+.provider span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.provider small { color: var(--muted); font-size: 0.78rem; }
+.provider input:checked + span { border-color: var(--accent); background: var(--accent-soft); }
+.provider input:focus-visible + span { box-shadow: 0 0 0 4px var(--accent-soft); }
+.provider input:disabled + span { opacity: 0.5; cursor: not-allowed; }
+
+.quality { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.9rem; font-weight: 500; }
+.quality select {
+  padding: 7px 10px;
+  font: inherit;
+  font-weight: 400;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.notice code { font-size: 0.85em; }
+
 .model { margin: 0; font-size: 0.9rem; }
 .model .muted { display: block; margin: 2px 0 0; font-size: 0.85rem; }
 

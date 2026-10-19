@@ -268,6 +268,20 @@ app.get('/api/images', (req, res) => {
   res.json(files.map((f) => ({ filename: f, url: `/images/${f}` })));
 });
 
+app.delete('/api/images/:filename', (req, res) => {
+  const { filename } = req.params;
+  // Only plain generated names like 1792436799692.jpg, so nothing outside the images folder can be touched.
+  if (!/^\d+\.(jpg|png)$/.test(filename)) {
+    return res.status(400).json({ error: 'Ongeldige bestandsnaam.' });
+  }
+  const file = path.join(IMAGES_DIR, filename);
+  if (!fs.existsSync(file)) {
+    return res.status(404).json({ error: 'Afbeelding niet gevonden.' });
+  }
+  fs.rmSync(file);
+  res.status(204).end();
+});
+
 function missingCredentials() {
   return ['CLOUDFLARE_ACCOUNT_ID', 'CLOUDFLARE_API_TOKEN'].filter((name) => !process.env[name]);
 }

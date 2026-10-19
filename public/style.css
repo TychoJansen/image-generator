@@ -491,7 +491,11 @@ textarea { resize: vertical; min-height: 120px; }
   margin-top: 14px;
 }
 
-.gallery button {
+.gallery-item { position: relative; }
+
+.gallery .open {
+  display: block;
+  width: 100%;
   padding: 0;
   border: 0;
   border-radius: 12px;
@@ -506,8 +510,31 @@ textarea { resize: vertical; min-height: 120px; }
   object-fit: cover;
   transition: transform 0.3s, filter 0.3s;
 }
-.gallery button:hover img { transform: scale(1.05); filter: brightness(1.05); }
-.gallery button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.gallery .open:hover img { transform: scale(1.05); filter: brightness(1.05); }
+.gallery .open:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Delete button: appears on hover/focus with a mouse, always visible on touch screens */
+.gallery .icon-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  margin: 0;
+  width: 30px;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+}
+.gallery-item:hover .icon-btn,
+.gallery .icon-btn:focus-visible { opacity: 1; }
+.gallery .icon-btn:hover { background: var(--danger); color: #fff; }
+@media (hover: none) {
+  .gallery .icon-btn { opacity: 1; }
+}
+
+.btn.danger { background: var(--danger-soft); color: var(--danger); }
+.btn.danger:hover { background: var(--danger); color: #fff; }
 
 /* ---------- Lightbox ---------- */
 .lightbox {

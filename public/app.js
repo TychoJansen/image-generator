@@ -342,16 +342,20 @@ async function loadGallery() {
     const gallery = $('gallery');
     gallery.innerHTML = '';
     for (const img of images) {
+      const item = document.createElement('div');
+      item.className = 'gallery-item';
       const btn = document.createElement('button');
       btn.type = 'button';
+      btn.className = 'open';
       btn.title = 'Groot bekijken';
       const el = document.createElement('img');
       el.src = img.url;
       el.alt = 'Gegenereerde afbeelding';
       el.loading = 'lazy';
       btn.append(el);
-      btn.addEventListener('click', () => openLightbox(img.url));
-      gallery.append(btn);
+      btn.addEventListener('click', () => openLightbox(img));
+      item.append(btn, deleteButton('Afbeelding verwijderen', () => removeImage(img)));
+      gallery.append(item);
     }
     $('gallery-empty').hidden = images.length > 0;
     $('gallery-count').textContent = images.length ? `${images.length}` : '';
@@ -360,12 +364,36 @@ async function loadGallery() {
   }
 }
 
+async function removeImage(img) {
+  if (!confirm('Deze afbeelding definitief verwijderen?')) return false;
+  try {
+    await api(`/api/images/${img.filename}`, { method: 'DELETE' });
+    // If it is the image shown as the latest result, clear that too.
+    if ($('result-img').src.endsWith(img.url)) {
+      $('result').hidden = true;
+      $('idle').hidden = false;
+    }
+    loadGallery();
+    return true;
+  } catch (err) {
+    handleAdminError(err);
+    return false;
+  }
+}
+
 // --- Lightbox ---
-function openLightbox(url) {
-  $('lightbox-img').src = url;
-  $('lightbox-download').href = url;
+let lightboxImage = null;
+
+function openLightbox(img) {
+  lightboxImage = img;
+  $('lightbox-img').src = img.url;
+  $('lightbox-download').href = img.url;
   $('lightbox').showModal();
 }
+
+$('lightbox-delete').addEventListener('click', async () => {
+  if (lightboxImage && (await removeImage(lightboxImage))) $('lightbox').close();
+});
 
 $('lightbox-close').addEventListener('click', () => $('lightbox').close());
 // Clicking the dark backdrop (the dialog itself, outside its content) closes it too.

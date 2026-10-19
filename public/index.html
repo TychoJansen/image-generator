@@ -64,6 +64,26 @@
 
         <div class="layout">
           <div class="column">
+            <!-- Share -->
+            <div class="card share">
+              <button id="qr-open" type="button" class="qr-thumb" title="QR-code groot tonen">
+                <img id="qr-img" alt="QR-code naar het tabblad Woorden" />
+              </button>
+              <div class="share-body">
+                <h2>Delen</h2>
+                <p class="muted">Laat mensen deze QR-code scannen. Ze komen direct op het tabblad Woorden.</p>
+                <p id="share-url" class="share-url"></p>
+                <p id="share-warning" class="notice warning" hidden>
+                  Je bekijkt de app via localhost. Open de app via je publieke link (bijv. de trycloudflare-link), anders werkt de QR-code niet voor anderen.
+                </p>
+                <div class="row wrap">
+                  <button id="qr-show" type="button" class="btn small primary">Groot tonen</button>
+                  <button id="share-copy" type="button" class="btn small secondary">Link kopiëren</button>
+                  <a id="qr-download" class="btn small ghost" download="qr-woorden.svg">Downloaden</a>
+                </div>
+              </div>
+            </div>
+
             <!-- Words -->
             <div class="card">
               <div class="card-head">
@@ -179,6 +199,15 @@
       <a id="lightbox-download" class="btn small secondary" download>Downloaden</a>
       <button id="lightbox-close" type="button" class="btn small ghost">Sluiten</button>
     </div>
+  </dialog>
+
+  <!-- Big QR code to show on a screen or projector -->
+  <dialog id="qr-dialog" class="qr-dialog">
+    <p class="eyebrow">Doe mee</p>
+    <h1>Scan en voeg een woord toe</h1>
+    <img id="qr-big" alt="QR-code naar het tabblad Woorden" />
+    <p id="qr-big-url" class="share-url"></p>
+    <button id="qr-close" type="button" class="btn small ghost">Sluiten</button>
   </dialog>
 
   <script src="/app.js"></script>

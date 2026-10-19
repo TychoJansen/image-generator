@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const Database = require('better-sqlite3');
+const QRCode = require('qrcode');
 
 const PORT = process.env.PORT || 3000;
 const CF_MODEL = '@cf/black-forest-labs/flux-1-schnell';
@@ -111,7 +112,7 @@ function clientIp(req) {
 // --- App ---
 const app = express();
 app.use(express.json({ limit: '2mb' })); // room for one uploaded photo
-app.use(['/images', '/photos', '/api/generate', '/api/images', '/api/context', '/api/photos'], requireAdmin);
+app.use(['/images', '/photos', '/api/generate', '/api/images', '/api/context', '/api/photos', '/api/qr.svg'], requireAdmin);
 app.use('/photos', express.static(PHOTOS_DIR));
 app.use(express.static(PUBLIC_DIR));
 
@@ -245,6 +246,17 @@ app.delete('/api/photos/:id', (req, res) => {
   deletePhoto.run(photo.id);
   fs.rmSync(path.join(PHOTOS_DIR, photo.filename), { force: true });
   res.status(204).end();
+});
+
+// QR code for the share link (admin only). The page passes its own address, so it is the public
+// tunnel link when the admin opens the app through it.
+app.get('/api/qr.svg', async (req, res) => {
+  const url = typeof req.query.url === 'string' ? req.query.url : '';
+  if (!/^https?:\/\/\S+$/.test(url) || url.length > 500) {
+    return res.status(400).json({ error: 'Ongeldige link voor de QR-code.' });
+  }
+  const svg = await QRCode.toString(url, { type: 'svg', margin: 2, errorCorrectionLevel: 'M' });
+  res.type('image/svg+xml').send(svg);
 });
 
 // Images

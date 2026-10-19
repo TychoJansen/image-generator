@@ -523,6 +523,65 @@ textarea { resize: vertical; min-height: 120px; }
 .lightbox img { display: block; max-width: 100%; max-height: 78vh; margin: 0 auto; border-radius: 10px; }
 .lightbox-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
 
+/* ---------- Share / QR ---------- */
+.share { display: flex; gap: 18px; align-items: flex-start; }
+.share-body { flex: 1; min-width: 0; }
+.share-body .muted { margin-bottom: 6px; }
+
+.qr-thumb {
+  flex: none;
+  width: 132px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff; /* QR codes need a light background to scan, also in dark mode */
+  cursor: zoom-in;
+}
+.qr-thumb img { display: block; width: 100%; aspect-ratio: 1; }
+
+.share-url {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--accent);
+  word-break: break-all;
+}
+
+.row.wrap { flex-wrap: wrap; }
+.notice.warning { background: #fff4d6; color: #8a5a00; margin: 0 0 10px; }
+
+@media (prefers-color-scheme: dark) {
+  .notice.warning { background: rgba(255, 196, 0, 0.12); color: #ffd166; }
+}
+
+@media (max-width: 520px) {
+  .share { flex-direction: column; align-items: center; text-align: center; }
+  .share .row { justify-content: center; }
+}
+
+.qr-dialog {
+  width: min(92vw, 640px);
+  padding: clamp(20px, 4vw, 40px);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+.qr-dialog::backdrop { background: rgba(10, 8, 14, 0.8); backdrop-filter: blur(4px); }
+.qr-dialog h1 { margin-bottom: 18px; }
+.qr-dialog img {
+  display: block;
+  width: min(70vh, 100%);
+  max-width: 460px;
+  margin: 0 auto 14px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #fff;
+}
+.qr-dialog .share-url { font-size: 1.05rem; }
+
 /* ---------- Animations ---------- */
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes shimmer { to { background-position: -150% 0; } }

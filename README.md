@@ -147,6 +147,11 @@ https://some-random-words.trycloudflare.com
 
 Send that link to people. They land on the Words tab. You use the same link and click **Generate**.
 
+**Or use the QR code.** Open the app through the public link, log in on the Generate tab and use the **Delen** card:
+it shows a QR code that opens the Words tab. Click **Groot tonen** to show it full-size on a screen or projector,
+or **Downloaden** to save it (SVG) for printing. The QR code always points to the address you opened the app on,
+so open it through the public link, not `localhost`. A new tunnel link means a new QR code.
+
 Good to know:
 
 - The link only works while your computer is on and **both** terminals (`npm start` and `cloudflared`) are running.

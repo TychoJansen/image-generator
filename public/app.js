@@ -64,6 +64,7 @@ async function openGenerate() {
     $('login').hidden = admin;
     $('admin').hidden = !admin;
     if (admin) {
+      loadShare();
       loadWords();
       loadContext();
       loadPhotos();
@@ -101,6 +102,36 @@ $('logout-btn').addEventListener('click', async () => {
   $('idle').hidden = false;
   show($('generate-error'), '');
   openGenerate();
+});
+
+// --- Share (QR code to the Words tab) ---
+// Uses the address the admin is viewing the page on, so it is the public link when opened through the tunnel.
+function loadShare() {
+  const url = `${location.origin}/#words`;
+  const qr = `/api/qr.svg?url=${encodeURIComponent(url)}`;
+  $('qr-img').src = qr;
+  $('qr-big').src = qr;
+  $('qr-download').href = qr;
+  $('share-url').textContent = url;
+  $('qr-big-url').textContent = url;
+  $('share-warning').hidden = !['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+}
+
+$('qr-open').addEventListener('click', () => $('qr-dialog').showModal());
+$('qr-show').addEventListener('click', () => $('qr-dialog').showModal());
+$('qr-close').addEventListener('click', () => $('qr-dialog').close());
+$('qr-dialog').addEventListener('click', (e) => {
+  if (e.target === $('qr-dialog')) $('qr-dialog').close();
+});
+
+$('share-copy').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText($('share-url').textContent);
+    $('share-copy').textContent = '✓ Gekopieerd';
+  } catch {
+    $('share-copy').textContent = 'Kopiëren lukt niet';
+  }
+  setTimeout(() => ($('share-copy').textContent = 'Link kopiëren'), 2000);
 });
 
 async function loadWords() {

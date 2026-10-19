@@ -1,0 +1,10 @@
+.env
+node_modules/
+*.db
+public/images/*
+!public/images/.gitkeep
+uploads/*
+!uploads/.gitkeep
+*.txt
+# Personal prompt context (real names and details)
+context.txt

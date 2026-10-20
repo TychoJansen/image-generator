@@ -61,142 +61,163 @@
 
     <!-- Generate tab: admin only -->
     <section id="tab-generate" class="tab-panel" hidden>
-        <div class="page-title">
-          <h1>Afbeelding genereren</h1>
-          <button type="button" class="btn ghost logout-btn">Uitloggen</button>
+      <div class="page-title">
+        <h1>Afbeelding genereren</h1>
+        <button type="button" class="btn ghost logout-btn">Uitloggen</button>
+      </div>
+
+      <!-- Step 1: inputs -->
+      <div class="step">
+        <div class="step-head">
+          <span class="step-number">1</span>
+          <div>
+            <h2>Inputs</h2>
+            <p class="muted">Kies de woorden, schrijf de context en kies eventueel foto's.</p>
+          </div>
         </div>
 
-        <div class="layout">
-          <div class="column">
-            <!-- Words -->
-            <div class="card">
-              <div class="card-head">
-                <h2>Woorden</h2>
-                <span id="word-count" class="pill"></span>
-              </div>
-              <div class="card-actions">
-                <button id="select-all" type="button" class="btn small ghost">Alles</button>
-                <button id="select-none" type="button" class="btn small ghost">Geen</button>
-              </div>
-              <ul id="word-list" class="chips"></ul>
-              <p id="no-words" class="empty" hidden>Nog geen woorden. Deel de link zodat mensen woorden kunnen toevoegen.</p>
+        <!-- Words -->
+        <div class="card">
+          <div class="card-head">
+            <h2>Woorden</h2>
+            <span id="word-count" class="pill"></span>
+          </div>
+          <div class="card-actions">
+            <button id="select-all" type="button" class="btn small ghost">Alles</button>
+            <button id="select-none" type="button" class="btn small ghost">Geen</button>
+          </div>
+          <ul id="word-list" class="chips"></ul>
+          <p id="no-words" class="empty" hidden>Nog geen woorden. Deel de link zodat mensen woorden kunnen toevoegen.</p>
+        </div>
+
+        <div class="input-grid">
+          <!-- Context -->
+          <div class="card">
+            <div class="card-head">
+              <h2>Context</h2>
             </div>
+            <p class="muted">Tip: het AI-model begrijpt Engels het best.</p>
 
-            <!-- Context -->
-            <div class="card">
-              <div class="card-head">
-                <h2>Context</h2>
-              </div>
-              <p class="muted">Tip: het AI-model begrijpt Engels het best.</p>
-
-              <div class="field-head">
-                <label for="context">Altijd meesturen</label>
-                <span id="context-count" class="pill">0 / 1000</span>
-              </div>
-              <p class="help">Gaat mee met élke afbeelding: de stijl, wie er altijd op moet en wat niet mag.</p>
-              <textarea id="context" maxlength="1000" rows="4"
-                placeholder="Bijv.: A warm, joyful wedding illustration. Always include Laureanne (the bride, 30) and Jerrel (the groom, 32, with a beard). No text or letters in the image."></textarea>
-
-              <div class="field-head">
-                <label for="glossary">Woordenlijst</label>
-                <span id="glossary-count" class="pill">0 / 3000</span>
-              </div>
-              <p class="help">
-                Eén regel per naam: <code>Naam: beschrijving</code>. Een regel gaat alleen mee als de naam in de gekozen woorden
-                of in de beschrijving van een aangevinkte foto staat. Meerdere namen kan met komma's: <code>Paris, Dalwhinnie, paarden: …</code>
-              </p>
-              <textarea id="glossary" maxlength="3000" rows="7"
-                placeholder="Whisky: a small brown dog, a mix of Nova Scotia Duck Tolling Retriever and Border Collie.&#10;James: a slightly larger Border Collie, mostly grey and white.&#10;Noorwegen, Norway: their wedding trip, where they made wedding pictures."></textarea>
-              <div class="row">
-                <button id="save-context" type="button" class="btn secondary">Context opslaan</button>
-                <span id="context-saved" class="saved" hidden>✓ Opgeslagen</span>
-              </div>
-              <p id="context-error" class="notice error" hidden></p>
+            <div class="field-head">
+              <label for="context">Altijd meesturen</label>
+              <span id="context-count" class="pill">0 / 1000</span>
             </div>
+            <p class="help">Gaat mee met élke afbeelding: de stijl, wie er altijd op moet en wat niet mag.</p>
+            <textarea id="context" maxlength="1000" rows="4"
+              placeholder="Bijv.: A warm, joyful wedding illustration. Always include Laureanne (the bride, 30) and Jerrel (the groom, 32, with a beard). No text or letters in the image."></textarea>
 
-            <!-- Photos -->
-            <div class="card">
-              <div class="card-head">
-                <h2>Foto's</h2>
-                <span id="photo-count" class="pill">0 / 4 gekozen</span>
-              </div>
-              <p class="muted">
-                Upload foto's van mensen, dieren of plekken zodat ze op de afbeelding lijken. Klik op een foto om hem te gebruiken (maximaal 4).
-              </p>
-              <form id="photo-form" class="upload">
-                <label class="dropzone">
-                  <input id="photo-file" type="file" accept="image/jpeg,image/png,image/webp" />
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" /></svg>
-                  <span id="photo-file-name">Kies een foto</span>
-                </label>
-                <input id="photo-caption" type="text" maxlength="100" placeholder="Wie of wat staat erop? (optioneel, bijv. 'Bram, onze hond')" />
-                <button type="submit" class="btn secondary">Uploaden</button>
-              </form>
-              <p id="photo-error" class="notice error" hidden></p>
-              <div id="photos" class="photos"></div>
-              <p id="no-photos" class="empty" hidden>Nog geen foto's.</p>
+            <div class="field-head">
+              <label for="glossary">Woordenlijst</label>
+              <span id="glossary-count" class="pill">0 / 3000</span>
             </div>
+            <p class="help">
+              Eén regel per naam: <code>Naam: beschrijving</code>. Een regel gaat alleen mee als de naam in de gekozen woorden
+              of in de beschrijving van een aangevinkte foto staat. Meerdere namen kan met komma's: <code>Paris, Dalwhinnie, paarden: …</code>
+            </p>
+            <textarea id="glossary" maxlength="3000" rows="7"
+              placeholder="Whisky: a small brown dog, a mix of Nova Scotia Duck Tolling Retriever and Border Collie.&#10;James: a slightly larger Border Collie, mostly grey and white.&#10;Noorwegen, Norway: their wedding trip, where they made wedding pictures."></textarea>
+            <div class="row">
+              <button id="save-context" type="button" class="btn secondary">Context opslaan</button>
+              <span id="context-saved" class="saved" hidden>✓ Opgeslagen</span>
+            </div>
+            <p id="context-error" class="notice error" hidden></p>
           </div>
 
-          <!-- Generate + result -->
-          <div class="column sticky">
-            <div class="card generate-card">
-              <h2>Genereren</h2>
-              <div class="provider" role="radiogroup" aria-label="Dienst">
-                <label>
-                  <input type="radio" name="provider" value="cloudflare" checked />
-                  <span><strong>Cloudflare</strong><small>gratis</small></span>
-                </label>
-                <label>
-                  <input type="radio" name="provider" value="openai" />
-                  <span><strong>OpenAI</strong><small>beste kwaliteit · betaald</small></span>
-                </label>
-              </div>
-              <p id="openai-missing" class="notice warning" hidden>
-                OpenAI is nog niet ingesteld. Zet je <code>OPENAI_API_KEY</code> in het .env-bestand en herstart de server.
-              </p>
-              <label id="quality-row" class="quality" hidden>
-                Kwaliteit
-                <select id="quality">
-                  <option value="low">Laag (goedkoopst, snelst)</option>
-                  <option value="medium" selected>Middel</option>
-                  <option value="high">Hoog (duurst, langzaamst)</option>
-                </select>
-              </label>
-              <p class="model">
-                Model: <strong id="model-name">FLUX.1 [schnell]</strong>
-                <span id="model-note" class="muted">snel, alleen tekst · ruim 150 per dag gratis</span>
-              </p>
-              <button id="generate-btn" type="button" class="btn primary large">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9z" /></svg>
-                Afbeelding genereren
-              </button>
-              <p id="generate-info" class="notice success" hidden></p>
-              <button id="preview-btn" type="button" class="btn small ghost">Prompt bekijken</button>
-              <pre id="preview" class="preview" hidden></pre>
-              <p id="generate-error" class="notice error" hidden></p>
-
-              <div id="idle" class="placeholder idle">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="9" cy="9" r="2" /><path d="M21 15l-5-5L5 21" /></svg>
-                <span>Je afbeelding verschijnt hier</span>
-              </div>
-
-              <div id="status" class="placeholder" hidden>
-                <span class="spinner"></span>
-                <span id="status-text">Afbeelding wordt gegenereerd…</span>
-              </div>
-
-              <figure id="result" class="result" hidden>
-                <img id="result-img" alt="Gegenereerde afbeelding" />
-                <figcaption>
-                  <a id="result-download" class="btn small secondary" download>Downloaden</a>
-                  <details>
-                    <summary>Bekijk de prompt</summary>
-                    <p id="result-prompt"></p>
-                  </details>
-                </figcaption>
-              </figure>
+          <!-- Photos -->
+          <div class="card">
+            <div class="card-head">
+              <h2>Foto's</h2>
+              <span id="photo-count" class="pill">0 / 4 gekozen</span>
             </div>
+            <p class="muted">
+              Upload foto's van mensen, dieren of plekken zodat ze op de afbeelding lijken. Klik op een foto om hem te gebruiken (maximaal 4).
+            </p>
+            <form id="photo-form" class="upload">
+              <label class="dropzone">
+                <input id="photo-file" type="file" accept="image/jpeg,image/png,image/webp" />
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" /></svg>
+                <span id="photo-file-name">Kies een foto</span>
+              </label>
+              <input id="photo-caption" type="text" maxlength="100" placeholder="Wie of wat staat erop? (optioneel, bijv. 'Bram, onze hond')" />
+              <button type="submit" class="btn secondary">Uploaden</button>
+            </form>
+            <p id="photo-error" class="notice error" hidden></p>
+            <div id="photos" class="photos"></div>
+            <p id="no-photos" class="empty" hidden>Nog geen foto's.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: generate -->
+      <div class="step">
+        <div class="step-head">
+          <span class="step-number">2</span>
+          <div>
+            <h2>Genereren</h2>
+            <p class="muted">Kies de dienst, bekijk eventueel de prompt en maak de afbeelding.</p>
+          </div>
+        </div>
+
+        <div class="generate-grid">
+          <div class="card generate-card">
+            <h2>Instellingen</h2>
+            <div class="provider" role="radiogroup" aria-label="Dienst">
+              <label>
+                <input type="radio" name="provider" value="cloudflare" checked />
+                <span><strong>Cloudflare</strong><small>gratis</small></span>
+              </label>
+              <label>
+                <input type="radio" name="provider" value="openai" />
+                <span><strong>OpenAI</strong><small>beste kwaliteit · betaald</small></span>
+              </label>
+            </div>
+            <p id="openai-missing" class="notice warning" hidden>
+              OpenAI is nog niet ingesteld. Zet je <code>OPENAI_API_KEY</code> in het .env-bestand en herstart de server.
+            </p>
+            <label id="quality-row" class="quality" hidden>
+              Kwaliteit
+              <select id="quality">
+                <option value="low">Laag (goedkoopst, snelst)</option>
+                <option value="medium" selected>Middel</option>
+                <option value="high">Hoog (duurst, langzaamst)</option>
+              </select>
+            </label>
+            <p class="model">
+              Model: <strong id="model-name">FLUX.1 [schnell]</strong>
+              <span id="model-note" class="muted">snel, alleen tekst · ruim 150 per dag gratis</span>
+            </p>
+            <button id="generate-btn" type="button" class="btn primary large">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9z" /></svg>
+              Afbeelding genereren
+            </button>
+            <p id="generate-info" class="notice success" hidden></p>
+            <button id="preview-btn" type="button" class="btn small ghost">Prompt bekijken</button>
+            <pre id="preview" class="preview" hidden></pre>
+            <p id="generate-error" class="notice error" hidden></p>
+          </div>
+
+          <div class="card result-card">
+            <h2>Resultaat</h2>
+            <div id="idle" class="placeholder idle">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="9" cy="9" r="2" /><path d="M21 15l-5-5L5 21" /></svg>
+              <span>Je afbeelding verschijnt hier</span>
+            </div>
+
+            <div id="status" class="placeholder" hidden>
+              <span class="spinner"></span>
+              <span id="status-text">Afbeelding wordt gegenereerd…</span>
+            </div>
+
+            <figure id="result" class="result" hidden>
+              <img id="result-img" alt="Gegenereerde afbeelding" />
+              <figcaption>
+                <a id="result-download" class="btn small secondary" download>Downloaden</a>
+                <details>
+                  <summary>Bekijk de prompt</summary>
+                  <p id="result-prompt"></p>
+                </details>
+              </figcaption>
+            </figure>
           </div>
         </div>
 
@@ -209,6 +230,7 @@
           <div id="gallery" class="gallery"></div>
           <p id="gallery-empty" class="empty" hidden>Nog geen afbeeldingen gegenereerd.</p>
         </div>
+      </div>
     </section>
 
     <!-- Word cloud tab: admin only -->

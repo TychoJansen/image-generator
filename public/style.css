@@ -167,21 +167,42 @@ main {
   margin-bottom: 20px;
 }
 
-.layout {
+/* Generate tab: step 1 (inputs) above step 2 (generate + gallery) */
+.step { display: grid; gap: 20px; margin-bottom: 44px; }
+.step:last-child { margin-bottom: 0; }
+
+.step-head { display: flex; align-items: center; gap: 14px; }
+.step-head h2 { font-size: 1.5rem; }
+.step-head .muted { margin: 2px 0 0; }
+
+.step-number {
+  flex: none;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--gradient);
+  color: #fff;
+  font-family: Fraunces, Georgia, serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  box-shadow: 0 6px 18px rgba(124, 92, 255, 0.3);
+}
+
+.input-grid,
+.generate-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
   align-items: start;
 }
 
-.column { display: grid; gap: 20px; min-width: 0; }
-.column.sticky { position: sticky; top: 84px; }
-
-.gallery-card { margin-top: 20px; }
+.result-card { display: grid; gap: 14px; }
 
 @media (max-width: 860px) {
-  .layout { grid-template-columns: 1fr; }
-  .column.sticky { position: static; }
+  .input-grid,
+  .generate-grid { grid-template-columns: 1fr; }
 }
 
 /* ---------- Words tab ---------- */

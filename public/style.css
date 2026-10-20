@@ -125,6 +125,12 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   transition: background 0.2s, color 0.2s;
 }
 .tab:hover { color: var(--text); }
+
+/* Four tabs must fit on a phone */
+@media (max-width: 560px) {
+  .tabs { width: 100%; }
+  .tab { flex: 1; padding: 7px 4px; text-align: center; font-size: 0.85rem; }
+}
 .tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
 
 /* ---------- Layout ---------- */
@@ -151,7 +157,8 @@ main {
   gap: 8px;
 }
 
-.card-actions { display: flex; gap: 6px; margin: 10px 0 12px; }
+.card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 12px; }
+.push-right { margin-left: auto; }
 
 .page-title {
   display: flex;
@@ -161,21 +168,42 @@ main {
   margin-bottom: 20px;
 }
 
-.layout {
+/* Generate tab: step 1 (inputs) above step 2 (generate + gallery) */
+.step { display: grid; gap: 20px; margin-bottom: 44px; }
+.step:last-child { margin-bottom: 0; }
+
+.step-head { display: flex; align-items: center; gap: 14px; }
+.step-head h2 { font-size: 1.5rem; }
+.step-head .muted { margin: 2px 0 0; }
+
+.step-number {
+  flex: none;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--gradient);
+  color: #fff;
+  font-family: Fraunces, Georgia, serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  box-shadow: 0 6px 18px rgba(124, 92, 255, 0.3);
+}
+
+.input-grid,
+.generate-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
   align-items: start;
 }
 
-.column { display: grid; gap: 20px; min-width: 0; }
-.column.sticky { position: sticky; top: 84px; }
-
-.gallery-card { margin-top: 20px; }
+.result-card { display: grid; gap: 14px; }
 
 @media (max-width: 860px) {
-  .layout { grid-template-columns: 1fr; }
-  .column.sticky { position: static; }
+  .input-grid,
+  .generate-grid { grid-template-columns: 1fr; }
 }
 
 /* ---------- Words tab ---------- */
@@ -237,7 +265,34 @@ input:focus, textarea:focus {
   box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
-textarea { resize: vertical; min-height: 120px; }
+textarea { resize: vertical; min-height: 96px; }
+
+.field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+}
+.field-head label { font-weight: 600; }
+.help { margin: 2px 0 8px; color: var(--muted); font-size: 0.85rem; }
+.help code { font-size: 0.85em; padding: 1px 5px; border-radius: 5px; background: var(--surface-2); }
+
+.preview {
+  margin: 0;
+  max-height: 320px;
+  overflow: auto;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+#preview-btn { justify-self: start; }
 
 .input-group { display: flex; gap: 8px; }
 .input-group input { flex: 1; min-width: 0; font-size: 1.02rem; }
@@ -443,6 +498,36 @@ textarea { resize: vertical; min-height: 120px; }
 /* ---------- Generate + result ---------- */
 .generate-card { display: grid; gap: 14px; }
 .generate-card h2 { margin-bottom: -4px; }
+.provider { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.provider label { cursor: pointer; }
+.provider input { position: absolute; opacity: 0; pointer-events: none; }
+.provider span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.provider small { color: var(--muted); font-size: 0.78rem; }
+.provider input:checked + span { border-color: var(--accent); background: var(--accent-soft); }
+.provider input:focus-visible + span { box-shadow: 0 0 0 4px var(--accent-soft); }
+.provider input:disabled + span { opacity: 0.5; cursor: not-allowed; }
+
+.quality { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.9rem; font-weight: 500; }
+.quality select {
+  padding: 7px 10px;
+  font: inherit;
+  font-weight: 400;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.notice code { font-size: 0.85em; }
+
 .model { margin: 0; font-size: 0.9rem; }
 .model .muted { display: block; margin: 2px 0 0; font-size: 0.85rem; }
 
@@ -551,13 +636,14 @@ textarea { resize: vertical; min-height: 120px; }
 .lightbox-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
 
 /* ---------- Share / QR ---------- */
-.share { display: flex; gap: 18px; align-items: flex-start; }
+.share-page { display: flex; gap: clamp(18px, 4vw, 36px); align-items: center; max-width: 860px; }
 .share-body { flex: 1; min-width: 0; }
 .share-body .muted { margin-bottom: 6px; }
+.share-body .help { margin-top: 14px; }
 
 .qr-thumb {
   flex: none;
-  width: 132px;
+  width: min(280px, 100%);
   padding: 8px;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -581,9 +667,9 @@ textarea { resize: vertical; min-height: 120px; }
   .notice.warning { background: rgba(255, 196, 0, 0.12); color: #ffd166; }
 }
 
-@media (max-width: 520px) {
-  .share { flex-direction: column; align-items: center; text-align: center; }
-  .share .row { justify-content: center; }
+@media (max-width: 700px) {
+  .share-page { flex-direction: column; text-align: center; }
+  .share-page .row { justify-content: center; }
 }
 
 .qr-dialog {
@@ -608,6 +694,101 @@ textarea { resize: vertical; min-height: 120px; }
   background: #fff;
 }
 .qr-dialog .share-url { font-size: 1.05rem; }
+
+/* ---------- Word cloud ---------- */
+.cloud {
+  position: relative;
+  height: clamp(320px, 60vh, 640px);
+  margin-top: 14px;
+  overflow: hidden;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 50%, var(--accent-soft), transparent 70%),
+    var(--surface-2);
+}
+
+/* Words are positioned around (0,0) = the centre; the script scales this layer to fit. */
+.cloud-inner { position: absolute; left: 50%; top: 50%; transform-origin: 0 0; transition: transform 0.4s ease; }
+
+.cloud-word {
+  position: absolute;
+  white-space: nowrap;
+  font-family: Fraunces, Georgia, serif;
+  font-weight: 700;
+  line-height: 1;
+  animation: pop-in 0.5s ease both;
+}
+
+.cloud-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.cloud-join { display: none; }
+.cloud-actions { margin-top: 10px; }
+
+/* Picking words in the cloud */
+.cloud-word { cursor: pointer; border-radius: 8px; transition: opacity 0.2s, outline-color 0.2s; }
+.cloud-word:hover { outline: 2px dashed currentColor; outline-offset: 4px; }
+.cloud-word.selected { outline: 3px solid currentColor; outline-offset: 4px; }
+.cloud.has-selection .cloud-word:not(.selected) { opacity: 0.3; }
+
+.cloud-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.cloud-select .row { margin: 0; }
+.cloud-select > .muted { margin: 0; font-size: 0.9rem; }
+
+.cloud-merge { margin-top: 20px; }
+.cloud-merge .help { margin-top: 8px; }
+
+.cloud-card:fullscreen .cloud-select { display: none; }
+.cloud-card:fullscreen .cloud-word { cursor: default; outline: none; }
+.cloud-card:fullscreen .cloud.has-selection .cloud-word { opacity: 1; }
+.cloud-actions .muted { margin: 0; font-size: 0.85rem; }
+
+/* Full screen (for a TV or projector): only the title, the cloud and a QR code to join */
+.cloud-card:fullscreen {
+  display: flex;
+  flex-direction: column;
+  padding: 3vh 3vw;
+  border: 0;
+  border-radius: 0;
+  background: var(--bg);
+}
+.cloud-card:fullscreen h2 { font-size: clamp(1.6rem, 3vw, 2.6rem); }
+.cloud-card:fullscreen .pill { font-size: 1rem; }
+.cloud-card:fullscreen .cloud { flex: 1; height: auto; }
+.cloud-card:fullscreen .cloud-actions { display: none; }
+.cloud-card:fullscreen .cloud-join {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 14px;
+  background: #fff;
+  color: #221c18;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+}
+.cloud-join img { width: clamp(110px, 14vh, 180px); display: block; }
+
+@keyframes pop-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
 
 /* ---------- Animations ---------- */
 @keyframes spin { to { transform: rotate(360deg); } }

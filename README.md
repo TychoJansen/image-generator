@@ -34,7 +34,7 @@ On the Generate tab you can steer the image further:
     A line is only sent when its name appears (as a whole word) in the selected words or in the description of a
     ticked photo. Several names per line are allowed: `Paris, Dalwhinnie, paarden: two brown horses`.
     This keeps the image focused: characters that are not asked for are not described, so they are not drawn.
-  - **Prompt bekijken (gratis)** shows the exact prompt for the current selection without generating an image.
+  - **Prompt bekijken** shows the exact prompt for the current selection without generating an image.
   The AI understands English best, but Dutch works too.
 - **Photos**: upload photos of people, animals or places and tick up to 4 to use. You can give each photo a short
   description (*"Bram, our dog"*) so the AI knows who or what it shows. The browser shrinks photos to under
@@ -169,7 +169,7 @@ https://some-random-words.trycloudflare.com
 
 Send that link to people. They land on the Words tab. You use the same link and click **Generate**.
 
-**Or use the QR code.** Open the app through the public link, log in on the Generate tab and use the **Delen** card:
+**Or use the QR code.** Open the app through the public link, open the **Share** tab (log in first):
 it shows a QR code that opens the Words tab. Click **Groot tonen** to show it full-size on a screen or projector,
 or **Downloaden** to save it (SVG) for printing. The QR code always points to the address you opened the app on,
 so open it through the public link, not `localhost`. A new tunnel link means a new QR code.

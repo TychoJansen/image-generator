@@ -21,6 +21,7 @@
     <nav class="tabs" aria-label="Tabbladen">
       <a href="#words" class="tab" data-tab="words">Woorden</a>
       <a href="#generate" class="tab" data-tab="generate">Genereren</a>
+      <a href="#share" class="tab" data-tab="share">Share</a>
     </nav>
   </header>
 
@@ -41,49 +42,31 @@
       </div>
     </section>
 
-    <!-- Generate tab: admin only -->
-    <section id="tab-generate" class="tab-panel" hidden>
-      <div id="login" class="card login" hidden>
+    <!-- Login: shown on the admin tabs (Genereren, Share) until the admin logs in -->
+    <section id="tab-login" class="tab-panel" hidden>
+      <div class="card login">
         <div class="lock" aria-hidden="true">
           <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
         </div>
-        <h1>Afbeelding genereren</h1>
-        <p class="lead">Dit tabblad is alleen voor de beheerder.</p>
+        <h1>Alleen voor de beheerder</h1>
+        <p class="lead">Log in om afbeeldingen te genereren en de app te delen.</p>
         <form id="login-form" class="input-group">
           <input id="password" type="password" placeholder="Beheerderswachtwoord" autocomplete="current-password" />
           <button type="submit" class="btn primary">Inloggen</button>
         </form>
         <p id="login-error" class="notice error" hidden></p>
       </div>
+    </section>
 
-      <div id="admin" hidden>
+    <!-- Generate tab: admin only -->
+    <section id="tab-generate" class="tab-panel" hidden>
         <div class="page-title">
           <h1>Afbeelding genereren</h1>
-          <button id="logout-btn" type="button" class="btn ghost">Uitloggen</button>
+          <button type="button" class="btn ghost logout-btn">Uitloggen</button>
         </div>
 
         <div class="layout">
           <div class="column">
-            <!-- Share -->
-            <div class="card share">
-              <button id="qr-open" type="button" class="qr-thumb" title="QR-code groot tonen">
-                <img id="qr-img" alt="QR-code naar het tabblad Woorden" />
-              </button>
-              <div class="share-body">
-                <h2>Delen</h2>
-                <p class="muted">Laat mensen deze QR-code scannen. Ze komen direct op het tabblad Woorden.</p>
-                <p id="share-url" class="share-url"></p>
-                <p id="share-warning" class="notice warning" hidden>
-                  Je bekijkt de app via localhost. Open de app via je publieke link (bijv. de trycloudflare-link), anders werkt de QR-code niet voor anderen.
-                </p>
-                <div class="row wrap">
-                  <button id="qr-show" type="button" class="btn small primary">Groot tonen</button>
-                  <button id="share-copy" type="button" class="btn small secondary">Link kopiëren</button>
-                  <a id="qr-download" class="btn small ghost" download="qr-woorden.svg">Downloaden</a>
-                </div>
-              </div>
-            </div>
-
             <!-- Words -->
             <div class="card">
               <div class="card-head">
@@ -187,7 +170,7 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9z" /></svg>
                 Afbeelding genereren
               </button>
-              <button id="preview-btn" type="button" class="btn small ghost">Prompt bekijken (gratis)</button>
+              <button id="preview-btn" type="button" class="btn small ghost">Prompt bekijken</button>
               <pre id="preview" class="preview" hidden></pre>
               <p id="generate-error" class="notice error" hidden></p>
 
@@ -223,6 +206,36 @@
           </div>
           <div id="gallery" class="gallery"></div>
           <p id="gallery-empty" class="empty" hidden>Nog geen afbeeldingen gegenereerd.</p>
+        </div>
+    </section>
+
+    <!-- Share tab: admin only -->
+    <section id="tab-share" class="tab-panel" hidden>
+      <div class="page-title">
+        <h1>Delen</h1>
+        <button type="button" class="btn ghost logout-btn">Uitloggen</button>
+      </div>
+
+      <div class="card share-page">
+        <button id="qr-open" type="button" class="qr-thumb" title="QR-code groot tonen">
+          <img id="qr-img" alt="QR-code naar het tabblad Woorden" />
+        </button>
+        <div class="share-body">
+          <h2>QR-code voor gasten</h2>
+          <p class="muted">Laat mensen deze QR-code scannen. Ze komen direct op het tabblad Woorden, zonder op een link te hoeven klikken.</p>
+          <p id="share-url" class="share-url"></p>
+          <p id="share-warning" class="notice warning" hidden>
+            Je bekijkt de app via localhost. Open de app via je publieke link (bijv. de trycloudflare-link), anders werkt de QR-code niet voor anderen.
+          </p>
+          <div class="row wrap">
+            <button id="qr-show" type="button" class="btn primary">Groot tonen</button>
+            <button id="share-copy" type="button" class="btn secondary">Link kopiëren</button>
+            <a id="qr-download" class="btn ghost" download="qr-woorden.svg">Downloaden</a>
+          </div>
+          <p class="help">
+            Tip: met <strong>Groot tonen</strong> zet je de code schermvullend op een tv of beamer. Met <strong>Downloaden</strong>
+            krijg je een bestand dat scherp blijft op elk formaat, om te printen. Krijg je een nieuwe tunnel-link, dan verandert de code mee.
+          </p>
         </div>
       </div>
     </section>

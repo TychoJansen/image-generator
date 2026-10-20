@@ -608,13 +608,14 @@ textarea { resize: vertical; min-height: 96px; }
 .lightbox-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
 
 /* ---------- Share / QR ---------- */
-.share { display: flex; gap: 18px; align-items: flex-start; }
+.share-page { display: flex; gap: clamp(18px, 4vw, 36px); align-items: center; max-width: 860px; }
 .share-body { flex: 1; min-width: 0; }
 .share-body .muted { margin-bottom: 6px; }
+.share-body .help { margin-top: 14px; }
 
 .qr-thumb {
   flex: none;
-  width: 132px;
+  width: min(280px, 100%);
   padding: 8px;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -638,9 +639,9 @@ textarea { resize: vertical; min-height: 96px; }
   .notice.warning { background: rgba(255, 196, 0, 0.12); color: #ffd166; }
 }
 
-@media (max-width: 520px) {
-  .share { flex-direction: column; align-items: center; text-align: center; }
-  .share .row { justify-content: center; }
+@media (max-width: 700px) {
+  .share-page { flex-direction: column; text-align: center; }
+  .share-page .row { justify-content: center; }
 }
 
 .qr-dialog {

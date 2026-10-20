@@ -47,14 +47,23 @@ function show(el, message) {
 }
 
 // --- Tabs (the URL hash keeps the tab, so /#generate links straight to it) ---
+const ADMIN_TABS = ['generate', 'share'];
+let currentTab = 'words';
+
 function showTab(name) {
-  if (name !== 'generate') name = 'words';
+  if (!ADMIN_TABS.includes(name)) name = 'words';
+  currentTab = name;
   for (const tab of document.querySelectorAll('.tab')) {
     tab.classList.toggle('active', tab.dataset.tab === name);
   }
   $('tab-words').hidden = name !== 'words';
-  $('tab-generate').hidden = name !== 'generate';
-  if (name === 'generate') openGenerate();
+  if (ADMIN_TABS.includes(name)) {
+    openAdmin();
+  } else {
+    $('tab-login').hidden = true;
+    $('tab-generate').hidden = true;
+    $('tab-share').hidden = true;
+  }
 }
 
 window.addEventListener('hashchange', () => showTab(location.hash.slice(1)));
@@ -77,31 +86,33 @@ $('word-form').addEventListener('submit', async (e) => {
   }
 });
 
-// --- Generate tab ---
-async function openGenerate() {
+// --- Admin tabs (Genereren, Share): show the login form until the admin is logged in ---
+async function openAdmin() {
   try {
     const { admin } = await api('/api/session');
-    $('login').hidden = admin;
-    $('admin').hidden = !admin;
-    if (admin) {
+    $('tab-login').hidden = admin;
+    $('tab-generate').hidden = !admin || currentTab !== 'generate';
+    $('tab-share').hidden = !admin || currentTab !== 'share';
+    if (!admin) {
+      $('password').focus();
+    } else if (currentTab === 'generate') {
       loadProviders();
-      loadShare();
       loadWords();
       loadContext();
       loadPhotos();
       loadGallery();
     } else {
-      $('password').focus();
+      loadShare();
     }
   } catch (err) {
-    $('login').hidden = false;
+    $('tab-login').hidden = false;
     show($('login-error'), err.message);
   }
 }
 
 // After a 401 (session expired or server restarted), go back to the login form.
 function handleAdminError(err) {
-  if (err.status === 401) return openGenerate();
+  if (err.status === 401) return openAdmin();
   show($('generate-error'), err.message);
 }
 
@@ -111,19 +122,22 @@ $('login-form').addEventListener('submit', async (e) => {
     await api('/api/login', { method: 'POST', body: JSON.stringify({ password: $('password').value }) });
     $('password').value = '';
     show($('login-error'), '');
-    openGenerate();
+    openAdmin();
   } catch (err) {
     show($('login-error'), err.message);
   }
 });
 
-$('logout-btn').addEventListener('click', async () => {
-  await api('/api/logout', { method: 'POST' }).catch(() => {});
-  $('result').hidden = true;
-  $('idle').hidden = false;
-  show($('generate-error'), '');
-  openGenerate();
-});
+for (const btn of document.querySelectorAll('.logout-btn')) {
+  btn.addEventListener('click', async () => {
+    await api('/api/logout', { method: 'POST' }).catch(() => {});
+    $('result').hidden = true;
+    $('idle').hidden = false;
+    $('preview').hidden = true;
+    show($('generate-error'), '');
+    openAdmin();
+  });
+}
 
 // --- Share (QR code to the Words tab) ---
 // Uses the address the admin is viewing the page on, so it is the public link when opened through the tunnel.
@@ -253,7 +267,7 @@ $('save-context').addEventListener('click', async () => {
     $('context-saved').hidden = false;
     setTimeout(() => ($('context-saved').hidden = true), 2000);
   } catch (err) {
-    if (err.status === 401) return openGenerate();
+    if (err.status === 401) return openAdmin();
     show($('context-error'), err.message);
   }
 });
@@ -397,7 +411,7 @@ $('photo-form').addEventListener('submit', async (e) => {
     show($('photo-error'), '');
     loadPhotos();
   } catch (err) {
-    if (err.status === 401) return openGenerate();
+    if (err.status === 401) return openAdmin();
     show($('photo-error'), err.message);
   }
 });

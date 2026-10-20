@@ -21,6 +21,7 @@
     <nav class="tabs" aria-label="Tabbladen">
       <a href="#words" class="tab" data-tab="words">Woorden</a>
       <a href="#generate" class="tab" data-tab="generate">Genereren</a>
+      <a href="#cloud" class="tab" data-tab="cloud">Woordweb</a>
       <a href="#share" class="tab" data-tab="share">Share</a>
     </nav>
   </header>
@@ -49,7 +50,7 @@
           <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
         </div>
         <h1>Alleen voor de beheerder</h1>
-        <p class="lead">Log in om afbeeldingen te genereren en de app te delen.</p>
+        <p class="lead">Log in om afbeeldingen te genereren, het woordweb te bekijken en de app te delen.</p>
         <form id="login-form" class="input-group">
           <input id="password" type="password" placeholder="Beheerderswachtwoord" autocomplete="current-password" />
           <button type="submit" class="btn primary">Inloggen</button>
@@ -170,6 +171,7 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9z" /></svg>
                 Afbeelding genereren
               </button>
+              <p id="generate-info" class="notice success" hidden></p>
               <button id="preview-btn" type="button" class="btn small ghost">Prompt bekijken</button>
               <pre id="preview" class="preview" hidden></pre>
               <p id="generate-error" class="notice error" hidden></p>
@@ -207,6 +209,59 @@
           <div id="gallery" class="gallery"></div>
           <p id="gallery-empty" class="empty" hidden>Nog geen afbeeldingen gegenereerd.</p>
         </div>
+    </section>
+
+    <!-- Word cloud tab: admin only -->
+    <section id="tab-cloud" class="tab-panel" hidden>
+      <div class="page-title">
+        <h1>Woordweb</h1>
+        <button type="button" class="btn ghost logout-btn">Uitloggen</button>
+      </div>
+
+      <div id="cloud-card" class="card cloud-card">
+        <div class="card-head">
+          <h2>Wat iedereen heeft ingevuld</h2>
+          <span id="cloud-count" class="pill"></span>
+        </div>
+        <div id="cloud" class="cloud">
+          <div id="cloud-inner" class="cloud-inner"></div>
+          <p id="cloud-empty" class="cloud-empty" hidden>Nog geen woorden. Laat gasten de QR-code scannen om mee te doen.</p>
+          <div class="cloud-join">
+            <img id="cloud-qr" alt="QR-code naar het tabblad Woorden" />
+            <span>Doe mee!</span>
+          </div>
+        </div>
+        <div class="cloud-select">
+          <span id="cloud-selected" class="muted">Klik op woorden om er een afbeelding van te maken.</span>
+          <div class="row wrap">
+            <button id="cloud-top" type="button" class="btn small ghost">Top 10 kiezen</button>
+            <button id="cloud-clear" type="button" class="btn small ghost" hidden>Wissen</button>
+            <button id="cloud-generate" type="button" class="btn small primary" disabled>Maak afbeelding</button>
+          </div>
+        </div>
+        <div class="row wrap cloud-actions">
+          <button id="cloud-fullscreen" type="button" class="btn small secondary">Volledig scherm</button>
+          <span class="muted">Woorden die vaker zijn ingevuld, staan groter. Wordt elke 10 seconden vanzelf bijgewerkt.</span>
+        </div>
+      </div>
+
+      <div class="card cloud-merge">
+        <div class="card-head">
+          <h2>Varianten samenvoegen</h2>
+        </div>
+        <p class="help">
+          Eén regel per woord: <code>hoofdwoord = variant, variant</code>, bijvoorbeeld <code>paarden = paard, paardjes, horses</code>.
+          De varianten tellen dan mee onder het hoofdwoord. Hoofdletters maken niet uit. Dit geldt alleen voor het woordweb;
+          bij het genereren worden de woorden gebruikt zoals gasten ze hebben ingevuld.
+        </p>
+        <textarea id="merges" maxlength="3000" rows="5"
+          placeholder="paarden = paard, paardjes, horses&#10;Noorwegen = Norway, Noorwegen reis&#10;liefde = love, ❤️"></textarea>
+        <div class="row">
+          <button id="save-merges" type="button" class="btn secondary">Opslaan</button>
+          <span id="merges-saved" class="saved" hidden>✓ Opgeslagen</span>
+        </div>
+        <p id="merges-error" class="notice error" hidden></p>
+      </div>
     </section>
 
     <!-- Share tab: admin only -->

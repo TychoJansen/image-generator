@@ -20,6 +20,7 @@ const MAX_WORD_LENGTH = 50;
 const MAX_WORDS_PER_PROMPT = 20;
 const MAX_CONTEXT_LENGTH = 1000;
 const MAX_GLOSSARY_LENGTH = 3000;
+const MAX_MERGES_LENGTH = 3000;
 const MAX_CAPTION_LENGTH = 100;
 const MAX_PHOTOS_STORED = 20;
 const MAX_PHOTOS_PER_PROMPT = 4;
@@ -118,7 +119,7 @@ function clientIp(req) {
 // --- App ---
 const app = express();
 app.use(express.json({ limit: '2mb' })); // room for one uploaded photo
-app.use(['/images', '/photos', '/api/generate', '/api/images', '/api/context', '/api/photos', '/api/qr.svg', '/api/providers', '/api/prompt'], requireAdmin);
+app.use(['/images', '/photos', '/api/generate', '/api/images', '/api/context', '/api/photos', '/api/qr.svg', '/api/providers', '/api/prompt', '/api/merges'], requireAdmin);
 app.use('/photos', express.static(PHOTOS_DIR));
 app.use(express.static(PUBLIC_DIR));
 
@@ -225,6 +226,20 @@ app.put('/api/context', (req, res) => {
 function largeName(filename) {
   return filename.replace(/\.jpg$/, '-large.jpg');
 }
+
+// Word cloud variants (admin only): lines like "paarden = paard, paardjes" that count as one word in the cloud.
+app.get('/api/merges', (req, res) => {
+  res.json({ merges: getSetting.get('merges')?.value || '' });
+});
+
+app.put('/api/merges', (req, res) => {
+  const merges = typeof req.body?.merges === 'string' ? req.body.merges.trim() : '';
+  if (merges.length > MAX_MERGES_LENGTH) {
+    return res.status(400).json({ error: `De lijst mag maximaal ${MAX_MERGES_LENGTH} tekens lang zijn.` });
+  }
+  setSetting.run('merges', merges);
+  res.json({ merges });
+});
 
 // Reference photos (admin only). The browser resizes them to a JPEG under 512x512 before uploading.
 function photoJson(photo) {

@@ -12,12 +12,14 @@ A small web app that turns words from other people into images made by AI.
    and sends it to [Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/), which draws the image
    with the FLUX.1 schnell model. The image appears on the page and is added to your gallery.
 
-The app is a single page with two tabs:
+The app is a single page with four tabs:
 
 | Tab          | Who can use it          | What it does                                                          |
 |--------------|-------------------------|-----------------------------------------------------------------------|
 | **Words**    | Everyone                | Add a word or short phrase (max 50 characters).                       |
 | **Generate** | Only you (password)     | See and delete words, select up to 20, add context and reference photos, generate an image, view the gallery. |
+| **Woordweb** | Only you (password)     | A live word cloud of everything participants submitted; more often = bigger. Full-screen mode for a TV or projector, with a QR code to join. Click words (or **Top 10 kiezen**) and **Maak afbeelding** to tick them on the Generate tab. **Varianten samenvoegen** (`paarden = paard, horses`) counts variants as one word in the cloud. |
+| **Share**    | Only you (password)     | QR code and link that open the Words tab. |
 
 How it is built: a Node.js server (Express) stores the words in a small SQLite database file (`words.db`) and saves
 the generated images as `.jpg` files in `public/images/`. The web page is plain HTML, CSS and JavaScript. Your
@@ -230,6 +232,7 @@ For reference; the web page uses these routes. "Admin" routes need you to be log
 | DELETE | `/api/words/:id`  | Delete a word (admin)                            |
 | POST   | `/api/prompt`     | Same body as `/api/generate`; returns the prompt without generating (admin) |
 | POST   | `/api/generate`   | `{ "ids": [1, 2], "photoIds": [3], "provider": "cloudflare" or "openai", "quality": "low"/"medium"/"high" }` – 1–20 words, 0–4 photos (admin) |
+| GET/PUT | `/api/merges`    | Read / save the word cloud variants `{ "merges": "paarden = paard, horses" }` (admin) |
 | GET    | `/api/providers`  | Which services are set up, and the OpenAI model (admin) |
 | DELETE | `/api/images/:filename` | Delete a generated image (admin) |
 | GET/PUT | `/api/context`   | Read / save the context `{ "context": "..." }` (admin) |

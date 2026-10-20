@@ -125,6 +125,12 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   transition: background 0.2s, color 0.2s;
 }
 .tab:hover { color: var(--text); }
+
+/* Four tabs must fit on a phone */
+@media (max-width: 560px) {
+  .tabs { width: 100%; }
+  .tab { flex: 1; padding: 7px 4px; text-align: center; font-size: 0.85rem; }
+}
 .tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
 
 /* ---------- Layout ---------- */
@@ -666,6 +672,101 @@ textarea { resize: vertical; min-height: 96px; }
   background: #fff;
 }
 .qr-dialog .share-url { font-size: 1.05rem; }
+
+/* ---------- Word cloud ---------- */
+.cloud {
+  position: relative;
+  height: clamp(320px, 60vh, 640px);
+  margin-top: 14px;
+  overflow: hidden;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 50% 50%, var(--accent-soft), transparent 70%),
+    var(--surface-2);
+}
+
+/* Words are positioned around (0,0) = the centre; the script scales this layer to fit. */
+.cloud-inner { position: absolute; left: 50%; top: 50%; transform-origin: 0 0; transition: transform 0.4s ease; }
+
+.cloud-word {
+  position: absolute;
+  white-space: nowrap;
+  font-family: Fraunces, Georgia, serif;
+  font-weight: 700;
+  line-height: 1;
+  animation: pop-in 0.5s ease both;
+}
+
+.cloud-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.cloud-join { display: none; }
+.cloud-actions { margin-top: 10px; }
+
+/* Picking words in the cloud */
+.cloud-word { cursor: pointer; border-radius: 8px; transition: opacity 0.2s, outline-color 0.2s; }
+.cloud-word:hover { outline: 2px dashed currentColor; outline-offset: 4px; }
+.cloud-word.selected { outline: 3px solid currentColor; outline-offset: 4px; }
+.cloud.has-selection .cloud-word:not(.selected) { opacity: 0.3; }
+
+.cloud-select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.cloud-select .row { margin: 0; }
+.cloud-select > .muted { margin: 0; font-size: 0.9rem; }
+
+.cloud-merge { margin-top: 20px; }
+.cloud-merge .help { margin-top: 8px; }
+
+.cloud-card:fullscreen .cloud-select { display: none; }
+.cloud-card:fullscreen .cloud-word { cursor: default; outline: none; }
+.cloud-card:fullscreen .cloud.has-selection .cloud-word { opacity: 1; }
+.cloud-actions .muted { margin: 0; font-size: 0.85rem; }
+
+/* Full screen (for a TV or projector): only the title, the cloud and a QR code to join */
+.cloud-card:fullscreen {
+  display: flex;
+  flex-direction: column;
+  padding: 3vh 3vw;
+  border: 0;
+  border-radius: 0;
+  background: var(--bg);
+}
+.cloud-card:fullscreen h2 { font-size: clamp(1.6rem, 3vw, 2.6rem); }
+.cloud-card:fullscreen .pill { font-size: 1rem; }
+.cloud-card:fullscreen .cloud { flex: 1; height: auto; }
+.cloud-card:fullscreen .cloud-actions { display: none; }
+.cloud-card:fullscreen .cloud-join {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 14px;
+  background: #fff;
+  color: #221c18;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+}
+.cloud-join img { width: clamp(110px, 14vh, 180px); display: block; }
+
+@keyframes pop-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
 
 /* ---------- Animations ---------- */
 @keyframes spin { to { transform: rotate(360deg); } }

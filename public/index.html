@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Afbeeldingengenerator</title>
+  <title>Image Generator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -16,12 +16,12 @@
         <path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9z" />
         <path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z" />
       </svg>
-      <span>Afbeeldingengenerator</span>
+      <span>Image Generator</span>
     </div>
     <nav class="tabs" aria-label="Tabbladen">
       <a href="#words" class="tab" data-tab="words">Woorden</a>
-      <a href="#generate" class="tab" data-tab="generate">Genereren</a>
       <a href="#cloud" class="tab" data-tab="cloud">Woordweb</a>
+      <a href="#generate" class="tab" data-tab="generate">Genereren</a>
       <a href="#share" class="tab" data-tab="share">Share</a>
     </nav>
   </header>
@@ -85,9 +85,10 @@
           <div class="card-actions">
             <button id="select-all" type="button" class="btn small ghost">Alles</button>
             <button id="select-none" type="button" class="btn small ghost">Geen</button>
+            <button type="button" class="btn small danger delete-all-words push-right">Alle woorden verwijderen</button>
           </div>
           <ul id="word-list" class="chips"></ul>
-          <p id="no-words" class="empty" hidden>Nog geen woorden. Deel de link zodat mensen woorden kunnen toevoegen.</p>
+          <p id="no-words" class="empty" hidden>Nog geen woorden. Deel de link zodat mensen woorden kunnen toevoegen. Je kunt ook zonder woorden genereren, met alleen de context en/of foto's.</p>
         </div>
 
         <div class="input-grid">
@@ -264,6 +265,7 @@
         <div class="row wrap cloud-actions">
           <button id="cloud-fullscreen" type="button" class="btn small secondary">Volledig scherm</button>
           <span class="muted">Woorden die vaker zijn ingevuld, staan groter. Wordt elke 10 seconden vanzelf bijgewerkt.</span>
+          <button type="button" class="btn small danger delete-all-words push-right">Alle woorden verwijderen</button>
         </div>
       </div>
 

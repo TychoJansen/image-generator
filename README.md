@@ -17,8 +17,8 @@ The app is a single page with four tabs:
 | Tab          | Who can use it          | What it does                                                          |
 |--------------|-------------------------|-----------------------------------------------------------------------|
 | **Words**    | Everyone                | Add a word or short phrase (max 50 characters).                       |
-| **Generate** | Only you (password)     | See and delete words, select up to 20, add context and reference photos, generate an image, view the gallery. |
 | **Woordweb** | Only you (password)     | A live word cloud of everything participants submitted; more often = bigger. Full-screen mode for a TV or projector, with a QR code to join. Click words (or **Top 10 kiezen**) and **Maak afbeelding** to tick them on the Generate tab. **Varianten samenvoegen** (`paarden = paard, horses`) counts variants as one word in the cloud. |
+| **Generate** | Only you (password)     | See and delete words, select up to 20, add context and reference photos, generate an image, view the gallery. |
 | **Share**    | Only you (password)     | QR code and link that open the Words tab. |
 
 How it is built: a Node.js server (Express) stores the words in a small SQLite database file (`words.db`) and saves
@@ -188,6 +188,10 @@ Good to know:
 ## Limits and security
 
 - Words must not be empty and can be at most 50 characters. You can select at most 20 words per image.
+- Words are optional when generating: the text in **Altijd meesturen** and/or ticked photos are enough.
+  With no words, no photos and an empty **Altijd meesturen**, the app asks you to add something first.
+- **Alle woorden verwijderen** (on the Generate and Woordweb tabs) deletes every word after a confirmation.
+  This cannot be undone; context, photos and images are kept.
 - After 5 wrong passwords, that visitor is locked out of the Generate tab for 15 minutes.
 - A login lasts 12 hours and ends when the server restarts.
 - Context: max 1,000 characters. Photos: max 20 stored, max 4 per image, description max 100 characters.
@@ -229,9 +233,10 @@ For reference; the web page uses these routes. "Admin" routes need you to be log
 |--------|-------------------|--------------------------------------------------|
 | POST   | `/api/words`      | `{ "text": "..." }` – non-empty, max 50 chars    |
 | GET    | `/api/words`      | List words (admin)                               |
+| DELETE | `/api/words`      | Delete all words (admin)                         |
 | DELETE | `/api/words/:id`  | Delete a word (admin)                            |
 | POST   | `/api/prompt`     | Same body as `/api/generate`; returns the prompt without generating (admin) |
-| POST   | `/api/generate`   | `{ "ids": [1, 2], "photoIds": [3], "provider": "cloudflare" or "openai", "quality": "low"/"medium"/"high" }` – 1–20 words, 0–4 photos (admin) |
+| POST   | `/api/generate`   | `{ "ids": [1, 2], "photoIds": [3], "provider": "cloudflare" or "openai", "quality": "low"/"medium"/"high" }` – 0–20 words, 0–4 photos (admin) |
 | GET/PUT | `/api/merges`    | Read / save the word cloud variants `{ "merges": "paarden = paard, horses" }` (admin) |
 | GET    | `/api/providers`  | Which services are set up, and the OpenAI model (admin) |
 | DELETE | `/api/images/:filename` | Delete a generated image (admin) |

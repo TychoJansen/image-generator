@@ -157,7 +157,8 @@ main {
   gap: 8px;
 }
 
-.card-actions { display: flex; gap: 6px; margin: 10px 0 12px; }
+.card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 12px; }
+.push-right { margin-left: auto; }
 
 .page-title {
   display: flex;

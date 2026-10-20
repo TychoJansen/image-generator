@@ -61,6 +61,7 @@ const listWords = db.prepare('SELECT id, text, created_at FROM words ORDER BY id
 const insertWord = db.prepare('INSERT INTO words (text) VALUES (?)');
 const getWord = db.prepare('SELECT id, text, created_at FROM words WHERE id = ?');
 const deleteWord = db.prepare('DELETE FROM words WHERE id = ?');
+const deleteAllWords = db.prepare('DELETE FROM words');
 
 const getSetting = db.prepare('SELECT value FROM settings WHERE key = ?');
 const setSetting = db.prepare(
@@ -186,6 +187,12 @@ app.post('/api/words', (req, res) => {
   }
   insertWord.run(text);
   res.status(201).json({ text });
+});
+
+// Removes every word in one go (admin only), e.g. to start fresh.
+app.delete('/api/words', requireAdmin, (req, res) => {
+  const { changes } = deleteAllWords.run();
+  res.json({ deleted: changes });
 });
 
 app.delete('/api/words/:id', requireAdmin, (req, res) => {
@@ -418,12 +425,17 @@ function buildPrompt(words, photos, firstImageNumber) {
   const always = getSetting.get('context')?.value || '';
   const glossary = matchGlossary(getSetting.get('glossary')?.value || '', [...words, ...photos.map((p) => p.caption)]);
 
-  const parts = [`Create one detailed, colorful illustration based on these words: ${words.join(', ')}.`];
+  const parts = [
+    words.length > 0
+      ? `Create one detailed, colorful illustration based on these words: ${words.join(', ')}.`
+      : 'Create one detailed, colorful illustration.',
+  ];
   if (always) {
     parts.push(`Always follow these instructions:\n${always}`);
   }
   if (glossary.length > 0) {
-    parts.push(`What some of these words mean:\n${glossary.map((g) => `- ${g.line}`).join('\n')}`);
+    const heading = words.length > 0 ? 'What some of these words mean' : 'Background information';
+    parts.push(`${heading}:\n${glossary.map((g) => `- ${g.line}`).join('\n')}`);
   }
   if (photos.length > 0) {
     const refs = photos
@@ -527,7 +539,6 @@ function readSelection(body) {
   const quality = OPENAI_QUALITIES.includes(body?.quality) ? body.quality : 'medium';
 
   const ids = Array.isArray(body?.ids) ? body.ids.map(Number) : [];
-  if (ids.length === 0) return { error: 'Selecteer minstens één woord.' };
   if (ids.length > MAX_WORDS_PER_PROMPT) return { error: `Selecteer maximaal ${MAX_WORDS_PER_PROMPT} woorden.` };
   const words = ids.map((id) => getWord.get(id)).filter(Boolean);
   if (words.length !== ids.length) {
@@ -539,6 +550,13 @@ function readSelection(body) {
   const photos = photoIds.map((id) => getPhoto.get(id)).filter(Boolean);
   if (photos.length !== photoIds.length) {
     return { error: "Een of meer geselecteerde foto's bestaan niet meer. Herlaad de pagina." };
+  }
+
+  // Words are optional, but there must be something to make an image of.
+  if (words.length === 0 && photos.length === 0 && !getSetting.get('context')?.value) {
+    return {
+      error: 'Er is niets om een afbeelding van te maken. Kies minstens één woord, een foto, of vul "Altijd meesturen" in bij Context.',
+    };
   }
 
   const prompt = buildPrompt(

@@ -480,6 +480,32 @@ async function removeWord(id) {
   }
 }
 
+// --- Delete all words (button on the Generate and Woordweb tabs) ---
+async function deleteAllWords() {
+  let count;
+  try {
+    count = (await api('/api/words')).length;
+  } catch (err) {
+    return handleAdminError(err);
+  }
+  if (count === 0) return alert('Er zijn geen woorden om te verwijderen.');
+  const label = count === 1 ? '1 woord' : `alle ${count} woorden`;
+  if (!confirm(`Weet je zeker dat je ${label} wilt verwijderen?\n\nDit kan niet ongedaan worden gemaakt.`)) return;
+  try {
+    await api('/api/words', { method: 'DELETE' });
+  } catch (err) {
+    return handleAdminError(err);
+  }
+  selectedKeys.clear();
+  cloudSignature = '';
+  if (currentTab === 'cloud') loadCloud();
+  else loadWords();
+}
+
+for (const btn of document.querySelectorAll('.delete-all-words')) {
+  btn.addEventListener('click', deleteAllWords);
+}
+
 // --- Context ---
 async function loadContext() {
   try {
@@ -604,7 +630,7 @@ function updateModelInfo() {
   const openai = selectedProvider() === 'openai';
   $('quality-row').hidden = !openai;
   $('openai-missing').hidden = !openai || providers.openai;
-  $('generate-btn').disabled = $('word-list').querySelectorAll('input').length === 0 || (openai && !providers.openai);
+  $('generate-btn').disabled = openai && !providers.openai;
 
   if (openai) {
     $('model-name').textContent = providers.openaiModel || 'OpenAI';
@@ -742,8 +768,10 @@ function currentSelection() {
   const ids = [...$('word-list').querySelectorAll('input:checked')].map((b) => Number(b.value));
   const photoIds = [...$('photos').querySelectorAll('input:checked')].map((b) => Number(b.value));
   let error = '';
-  if (ids.length === 0) error = 'Selecteer minstens één woord.';
-  else if (ids.length > MAX_WORDS) error = `Selecteer maximaal ${MAX_WORDS} woorden.`;
+  // Words are optional: context and/or photos alone are enough to make an image.
+  if (ids.length === 0 && photoIds.length === 0 && !$('context').value.trim()) {
+    error = 'Er is niets om een afbeelding van te maken. Kies minstens één woord, een foto, of vul "Altijd meesturen" in bij Context.';
+  } else if (ids.length > MAX_WORDS) error = `Selecteer maximaal ${MAX_WORDS} woorden.`;
   else if (photoIds.length > MAX_PHOTOS) error = `Selecteer maximaal ${MAX_PHOTOS} foto's.`;
   if (error) {
     show($('generate-error'), error);

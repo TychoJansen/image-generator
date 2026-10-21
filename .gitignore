@@ -1,10 +1,18 @@
 .env
+# All app data (database, generated images, reference photos)
+data/
 node_modules/
+# Old data locations of the Node.js version (still on disk if you used it)
 *.db
-public/images/*
-!public/images/.gitkeep
-uploads/*
-!uploads/.gitkeep
+public/images/
+uploads/
 *.txt
 # Personal prompt context (real names and details)
 context.txt
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/

@@ -1,0 +1,44 @@
+[project]
+name = "image-generator"
+version = "1.0.0"
+description = "Guests add words; the admin turns them into AI images with Cloudflare Workers AI or OpenAI."
+authors = [
+    {name = "Tycho Jansen", email = "tycho.jansen@live.nl"}
+]
+readme = "README.md"
+requires-python = ">=3.11,<4.0"
+dependencies = ["fastapi (>=0.157.0,<0.158.0)", "uvicorn (>=0.54.0,<0.55.0)", "httpx (>=0.28.1,<0.29.0)", "python-dotenv (>=1.2.4,<2.0.0)", "qrcode (>=8.2,<9.0)"]
+
+[project.scripts]
+image-generator = "image_generator.__main__:main"
+
+[tool.poetry]
+packages = [{ include = "image_generator" }]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=image_generator --cov-report=term-missing --cov-fail-under=100"
+filterwarnings = [
+    # Starlette's test client still works with httpx; this only announces a future change.
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
+
+[tool.coverage.run]
+source = ["image_generator"]
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.1.1,<10.0.0)",
+    "pytest-cov (>=7.1.0,<8.0.0)"
+]

@@ -21,9 +21,10 @@ The app is a single page with four tabs:
 | **Generate** | Only you (password)     | See and delete words, select up to 20, add context and reference photos, generate an image, view the gallery. |
 | **Share**    | Only you (password)     | QR code and link that open the Words tab. |
 
-How it is built: a Node.js server (Express) stores the words in a small SQLite database file (`words.db`) and saves
-the generated images as `.jpg` files in `public/images/`. The web page is plain HTML, CSS and JavaScript. Your
-Cloudflare credentials and admin password stay on the server and are never sent to the browser.
+How it is built: a Python server (FastAPI) keeps all data in one folder, `data/` (configurable with `DATA_DIR`): the
+SQLite database `words.db`, the generated images in `images/` and the reference photos in `photos/`. The web page is plain HTML, CSS and JavaScript (browsers only
+run JavaScript, so that part is not Python). Your Cloudflare and OpenAI keys and the admin password stay on the server
+and are never sent to the browser.
 
 ### Context and photos
 
@@ -40,7 +41,7 @@ On the Generate tab you can steer the image further:
   The AI understands English best, but Dutch works too.
 - **Photos**: upload photos of people, animals or places and tick up to 4 to use. You can give each photo a short
   description (*"Bram, our dog"*) so the AI knows who or what it shows. The browser shrinks photos to under
-  512×512 pixels before uploading, as the model requires. Photos are stored in `uploads/` and only you can see them.
+  512×512 pixels before uploading, as the model requires. Photos are stored in `data/photos/` and only you can see them.
 
 ### Choosing the AI service
 
@@ -63,8 +64,8 @@ Only use photos of people who are okay with it.
 
 ## What you need
 
-- **Node.js 20 or newer**: download the LTS version from https://nodejs.org and install it.
-  Check it worked by opening a **new** terminal and running `node --version`.
+- **Python 3.11 or newer**: https://www.python.org/downloads/ (or via pyenv). Check it with `python --version`.
+- **Poetry** to install the dependencies: https://python-poetry.org/docs/#installation. Check it with `poetry --version`.
 - **A free Cloudflare account** (https://dash.cloudflare.com/sign-up) for the image generation.
 - **Optional: an OpenAI account with an API key and credit** (https://platform.openai.com) to also use OpenAI.
 - **Optional:** `cloudflared`, only if people outside your own network should be able to open the app
@@ -84,10 +85,10 @@ cd image-generator
 If you already have the folder, `cd` into it instead. Put the path in quotes if it contains spaces,
 for example `cd "C:\My Projects\image-generator"`.
 
-**2. Install the dependencies.** This creates the `node_modules` folder:
+**2. Install the dependencies.** Poetry creates a virtual environment (`.venv`) and installs everything in it:
 
 ```powershell
-npm install
+poetry install
 ```
 
 **3. Create the `.env` file** (skip this if `.env` already exists):
@@ -118,18 +119,27 @@ ADMIN_PASSWORD=choose-a-long-password
 
 Save the file. `.env` is listed in `.gitignore`, so it is never committed to git.
 
+**5. Only if you used the earlier Node.js version:** copy its data (words, images, photos) into the new `data/` folder.
+This copies; it never moves or overwrites anything, so the old version keeps working:
+
+```powershell
+poetry run image-generator copy-old-data
+```
+
 ## Run the app
 
 **1. Start the server** in the project folder:
 
 ```powershell
-npm start
+poetry run image-generator
 ```
 
-You should see:
+(`poetry run python -m image_generator` does the same.) You should see something like:
 
 ```
-Server running at http://localhost:3000
+OpenAI image generation enabled (model: gpt-image-2.5-sunburst).
+Open http://localhost:3000 once the server is running.
+INFO:     Uvicorn running on http://127.0.0.1:3000 (Press CTRL+C to quit)
 ```
 
 The terminal stays busy (no new prompt) while the app is running. That is correct: keep this terminal open.
@@ -142,7 +152,10 @@ The terminal stays busy (no new prompt) while the app is running. That is correc
 
 **3. Stop the server** by pressing **Ctrl+C** in that terminal.
 
-After changing `.env`, stop the server and run `npm start` again so it picks up the new values.
+After changing `.env`, stop the server and run `poetry run image-generator` again so it picks up the new values.
+
+The server only listens on your own computer (`127.0.0.1`); the tunnel below makes it reachable from outside.
+Set `PORT` in `.env` to use another port.
 
 ## Share it over the internet
 
@@ -178,9 +191,10 @@ so open it through the public link, not `localhost`. A new tunnel link means a n
 
 Good to know:
 
-- The link only works while your computer is on and **both** terminals (`npm start` and `cloudflared`) are running.
+- The link only works while your computer is on and **both** terminals (`poetry run image-generator` and
+  `cloudflared`) are running.
 - Every time you restart `cloudflared` you get a **new** link; the old one stops working.
-  Restarting only the app (`npm start`) keeps the same link.
+  Restarting only the app keeps the same link.
 - To stop sharing, press **Ctrl+C** in the `cloudflared` terminal.
 - A red `ERR Failed to initialize DNS local resolver` line in the output is harmless.
 - Running a public tunnel from a work laptop may be against company policy. Check first.
@@ -203,8 +217,8 @@ Good to know:
 
 | Problem | Solution |
 |---------|----------|
-| `npm : The term 'npm' is not recognized` | Node.js is not installed, or the terminal was opened before installing it. Close VS Code completely and open it again. |
-| The prompt comes back right after `Server running …` | Another program is using port 3000; the next line says so. Close the other server, or add `PORT=3001` to `.env` and open http://localhost:3001. |
+| `poetry : The term 'poetry' is not recognized` | Poetry is not installed, or the terminal was opened before installing it. Close VS Code completely and open it again. |
+| `error while attempting to bind on address ... 3000` | Another program is using port 3000. Close the other server, or add `PORT=3001` to `.env` and open http://localhost:3001. |
 | "Missing Cloudflare credentials" | `CLOUDFLARE_ACCOUNT_ID` or `CLOUDFLARE_API_TOKEN` is empty in `.env`. Fill it in, save, and restart the server. |
 | "Cloudflare rejected the credentials" | The account ID or token is wrong, or the token lacks the Workers AI permission. Create a new token with the **Workers AI** template. |
 | "OpenAI heeft de API-sleutel geweigerd" | `OPENAI_API_KEY` in `.env` is wrong. Create a new key on platform.openai.com and restart the server. |
@@ -218,12 +232,41 @@ Good to know:
 
 | File / folder | What it is |
 |---------------|------------|
-| `server.js` | The server: API routes, login, database and Cloudflare calls |
-| `public/index.html`, `public/app.js`, `public/style.css` | The web page with both tabs |
-| `public/images/` | Generated images (not committed to git) |
-| `uploads/` | Uploaded reference photos, admin only (not committed to git) |
-| `words.db` | The SQLite database with the words, context and photo list, created on first start (not committed) |
+| `image_generator/app.py` | Builds the app: routers, error handlers, the static page |
+| `image_generator/routers/` | The API routes, one file per part: `session`, `words`, `context`, `photos`, `images`, `share`, `generate` |
+| `image_generator/schemas.py` | Pydantic models for the request bodies, with the Dutch error messages |
+| `image_generator/deps.py` | FastAPI dependencies: settings, a database connection per request, the admin check |
+| `image_generator/providers.py` | Calls to Cloudflare Workers AI and OpenAI, and their error messages |
+| `image_generator/prompt.py` | Building the prompt from words, context, glossary and photos |
+| `image_generator/auth.py` | Admin login, sessions and the lock after wrong passwords |
+| `image_generator/db.py` | The SQLite database |
+| `image_generator/storage.py` | Image and photo files, and copying data from the old layout |
+| `image_generator/errors.py` | How errors are sent to the page (`{"error": "..."}`) |
+| `image_generator/config.py` | Settings from `.env`, paths and limits |
+| `image_generator/__main__.py` | Command line: `image-generator` (start) and `image-generator copy-old-data` |
+| `tests/` | The tests (pytest) |
+| `public/index.html`, `public/app.js`, `public/style.css` | The web page with all tabs |
+| `data/` | All data: `words.db`, `images/` (generated) and `photos/` (uploaded); created on first start, not committed |
 | `.env` / `.env.example` | Your settings and secrets / an empty template |
+
+## Development
+
+```powershell
+poetry run pytest          # all tests, with a coverage report (must stay at 100%)
+pre-commit install         # once: run black, isort, flake8 and the secret scan before every commit
+pre-commit run --all-files # run those checks now
+```
+
+The tests use temporary folders and a fake Cloudflare/OpenAI, so they never touch your data and cost nothing.
+
+How the code is organised:
+
+- Routes are plain `def` functions; FastAPI runs them in a thread pool, so slow disk or database work never blocks
+  other requests. Only `/api/generate` is `async`, because it waits up to a minute for the AI service; its database
+  and file work goes through `run_in_threadpool`.
+- Every request gets its own database connection via `Depends(get_db)`; settings and the admin check come in via
+  `Depends` too.
+- Request bodies are Pydantic models (`schemas.py`). Their Dutch messages are sent to the page as `{"error": ...}`.
 
 ## API
 

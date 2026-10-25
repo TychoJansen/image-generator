@@ -31,19 +31,19 @@ def size_of(data: bytes) -> tuple[int, int]:
 def test_folder_photos_are_added_resized_and_marked(make_client, settings, tmp_path, caplog):
     folder = tmp_path / "reference-photos"
     folder.mkdir()
-    make_image(folder / "Laureanne_and-Jerrel.jpg")
-    make_image(folder / "Whisky.png", mode="RGBA")
+    make_image(folder / "personx.jpg")
+    make_image(folder / "dog.png", mode="RGBA")
     (folder / "notes.txt").write_text("not a photo")
     settings = replace(settings, reference_photos_dir=folder)
 
     with caplog.at_level(logging.INFO):
         admin = start(make_client, settings)
-    assert "Added reference photo Whisky.png." in caplog.text
+    assert "Added reference photo dog.png." in caplog.text
 
     photos = admin.get("/api/photos").json()
     assert sorted((p["caption"], p["fromFolder"]) for p in photos) == [
-        ("Laureanne and Jerrel", True),
-        ("Whisky", True),
+        ("personx", True),
+        ("dog", True),
     ]
     small = admin.get(photos[0]["url"]).content
     assert max(size_of(small)) == config.MAX_PHOTO_SIDE
@@ -57,12 +57,12 @@ def test_folder_photos_are_added_resized_and_marked(make_client, settings, tmp_p
 def test_folder_photos_work_as_reference_images(make_client, settings, tmp_path, fake_api):
     folder = tmp_path / "reference-photos"
     folder.mkdir()
-    make_image(folder / "Whisky.jpg")
+    make_image(folder / "dog.jpg")
     admin = start(make_client, replace(settings, reference_photos_dir=folder))
-    admin.put("/api/context", json={"glossary": "Whisky: a small brown dog"})
+    admin.put("/api/context", json={"glossary": "dog: a small brown dog"})
     photo_id = admin.get("/api/photos").json()[0]["id"]
     prompt = admin.post("/api/prompt", json={"photoIds": [photo_id]}).json()["prompt"]
-    assert "image 0 shows Whisky" in prompt and "- Whisky: a small brown dog" in prompt
+    assert "image 0 shows dog" in prompt and "- dog: a small brown dog" in prompt
 
 
 def test_unchanged_changed_and_removed_files(settings, tmp_path):
@@ -111,8 +111,8 @@ def test_no_folder(settings, tmp_path):
 
 
 def test_caption_from_filename():
-    assert caption_from_filename("Laureanne_and-Jerrel.jpg") == "Laureanne and Jerrel"
-    assert caption_from_filename("Whisky.PNG") == "Whisky"
+    assert caption_from_filename("personx.jpg") == "personx"
+    assert caption_from_filename("dog.PNG") == "dog"
 
 
 def test_folder_from_env(monkeypatch):

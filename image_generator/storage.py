@@ -107,7 +107,7 @@ def resize_photo(data: bytes) -> tuple[bytes, bytes]:
 
 
 def caption_from_filename(name: str) -> str:
-    """'Laureanne_and-Jerrel.jpg' -> 'Laureanne and Jerrel'."""
+    """'personx.jpg' -> 'personx'."""
     return re.sub(r"[_-]+", " ", Path(name).stem).strip()
 
 

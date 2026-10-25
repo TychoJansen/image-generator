@@ -32,7 +32,7 @@ On the Generate tab you can steer the image further:
 
 - **Context** has two boxes:
   - **Altijd meesturen** (always): sent with every image – the style, who must always be in it, what is not allowed
-    (*"A warm wedding illustration. Always include Laureanne and Jerrel. No text in the image."*).
+    (*"A warm wedding illustration. Always include person x. No text in the image."*).
   - **Woordenlijst** (glossary): one line per name, `Name: description`, e.g. `Whisky: a small brown dog`.
     A line is only sent when its name appears (as a whole word) in the selected words or in the description of a
     ticked photo. Several names per line are allowed: `Paris, Dalwhinnie, paarden: two brown horses`.
@@ -50,7 +50,7 @@ On the Generate tab you can steer the image further:
   512×512 pixels before uploading, as the model requires. Photos are stored in `data/photos/` and only you can see them.
 - **`reference-photos/` folder**: put photos you always want to use in this folder (JPG, PNG or WebP). At every start
   the app adds them to **Foto's**, **ticked by default**, so they are sent with every image unless you untick them
-  (at most 4 per image). The **file name is the description** (`Laureanne and Jerrel.jpg` → "Laureanne and Jerrel").
+  (at most 4 per image). The **file name is the description** (`personx.jpg` → "personx").
   Changed photos are replaced and removed ones disappear on the next start. These photos get an "Uit map" label and
   cannot be deleted in the app: remove them from the folder instead. The photos stay off GitHub (`.gitignore`).
   Note: ticked photos mean every image uses the photo model (Cloudflare: about 5 free images per day).

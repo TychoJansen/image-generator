@@ -39,9 +39,21 @@ On the Generate tab you can steer the image further:
     This keeps the image focused: characters that are not asked for are not described, so they are not drawn.
   - **Prompt bekijken** shows the exact prompt for the current selection without generating an image.
   The AI understands English best, but Dutch works too.
+  - **`context.txt`**: put your "Altijd meesturen" text in a file called `context.txt` in the project folder. At
+    every start, the app loads it into the box **when the file is new or changed** since the last start. Edits you
+    make in the app are kept until you change the file again. Use `CONTEXT_FILE` in `.env` for another file name, or
+    leave it empty to switch this off. `context.txt` is in `.gitignore`, so your personal details stay off GitHub.
+  - **`woordenlijst.txt`**: the same for the **Woordenlijst** box: one line per name, loaded at every start when the
+    file is new or changed. Use `GLOSSARY_FILE` in `.env` for another file name, or leave it empty to switch this off.
 - **Photos**: upload photos of people, animals or places and tick up to 4 to use. You can give each photo a short
   description (*"Bram, our dog"*) so the AI knows who or what it shows. The browser shrinks photos to under
   512×512 pixels before uploading, as the model requires. Photos are stored in `data/photos/` and only you can see them.
+- **`reference-photos/` folder**: put photos you always want to use in this folder (JPG, PNG or WebP). At every start
+  the app adds them to **Foto's**, **ticked by default**, so they are sent with every image unless you untick them
+  (at most 4 per image). The **file name is the description** (`Laureanne and Jerrel.jpg` → "Laureanne and Jerrel").
+  Changed photos are replaced and removed ones disappear on the next start. These photos get an "Uit map" label and
+  cannot be deleted in the app: remove them from the folder instead. The photos stay off GitHub (`.gitignore`).
+  Note: ticked photos mean every image uses the photo model (Cloudflare: about 5 free images per day).
 
 ### Choosing the AI service
 
@@ -119,12 +131,19 @@ ADMIN_PASSWORD=choose-a-long-password
 
 Save the file. `.env` is listed in `.gitignore`, so it is never committed to git.
 
-**5. Only if you used the earlier Node.js version:** copy its data (words, images, photos) into the new `data/` folder.
-This copies; it never moves or overwrites anything, so the old version keeps working:
+## Quick start: app + public link in one go (Windows)
 
-```powershell
-poetry run image-generator copy-old-data
-```
+Once everything is set up (see [Set up](#set-up-once) above and `cloudflared` below), **double-click `start.cmd`** in the project folder, or run `.\start.ps1` in
+PowerShell. It:
+
+1. starts the app,
+2. starts a Cloudflare tunnel (needs `cloudflared`, see [Share it over the internet](#share-it-over-the-internet)),
+3. shows the public link in a big box, **copies it to your clipboard** (just press Ctrl+V) and saves it in
+   `tunnel-link.txt`,
+4. opens the **Share** tab in your browser, with the QR code ready.
+
+Keep the window open while the app is in use; **Ctrl+C** stops the app and the tunnel together. Logs go to `logs/`.
+Options: `.\start.ps1 -NoBrowser` (do not open the browser) and `.\start.ps1 -Port 3001` (another port).
 
 ## Run the app
 
@@ -159,8 +178,9 @@ Set `PORT` in `.env` to use another port.
 
 ## Share it over the internet
 
-By default only you (and maybe people on the same Wi-Fi) can open the app. To give others a link that works
-from anywhere, use a free Cloudflare tunnel.
+By default only you can open the app. To give others a link that works from anywhere, use a free Cloudflare tunnel.
+The easiest way is the [Quick start](#quick-start-app--public-link-in-one-go-windows) script (`start.cmd`), which does
+steps 2 and 3 for you. Below are the manual steps.
 
 **1. Install cloudflared** (once). On Windows:
 
@@ -227,6 +247,11 @@ Good to know:
 | "Daily free Workers AI limit reached" | You used up today's free generations. Try again after 00:00 UTC. |
 | "ADMIN_PASSWORD is not set" | Add `ADMIN_PASSWORD=…` to `.env` and restart the server. |
 | "Too many wrong passwords" | Wait 15 minutes, or restart the server. |
+| `start.ps1 cannot be loaded because running scripts is disabled` | Double-click `start.cmd` instead; it runs the script without changing your settings. |
+| Start script: "The app is not installed yet" | Run `poetry install` once in the project folder. |
+| Start script: "cloudflared is not installed" | Run `winget install Cloudflare.cloudflared` once. |
+| Start script: "Port 3000 is already in use" | The app is probably still running somewhere: close that window, or use `.\start.ps1 -Port 3001`. |
+| Start script stops with an error | Look in `logs/app-errors.log` (the app) or `logs/cloudflared.log` (the tunnel). |
 
 ## Project files
 
@@ -240,14 +265,19 @@ Good to know:
 | `image_generator/prompt.py` | Building the prompt from words, context, glossary and photos |
 | `image_generator/auth.py` | Admin login, sessions and the lock after wrong passwords |
 | `image_generator/db.py` | The SQLite database |
-| `image_generator/storage.py` | Image and photo files, and copying data from the old layout |
+| `image_generator/storage.py` | Image and photo files, and loading `context.txt`, `woordenlijst.txt` and `reference-photos/` at startup |
 | `image_generator/errors.py` | How errors are sent to the page (`{"error": "..."}`) |
 | `image_generator/config.py` | Settings from `.env`, paths and limits |
-| `image_generator/__main__.py` | Command line: `image-generator` (start) and `image-generator copy-old-data` |
+| `image_generator/__main__.py` | Starts the server (`poetry run image-generator`) |
 | `tests/` | The tests (pytest) |
+| `start.cmd`, `start.ps1` | Start the app and a Cloudflare tunnel in one go, and copy the public link (Windows) |
 | `public/index.html`, `public/app.js`, `public/style.css` | The web page with all tabs |
 | `data/` | All data: `words.db`, `images/` (generated) and `photos/` (uploaded); created on first start, not committed |
 | `.env` / `.env.example` | Your settings and secrets / an empty template |
+| `context.txt` | Optional: your "Altijd meesturen" text, loaded at startup when changed (not committed: personal) |
+| `woordenlijst.txt` | Optional: your "Woordenlijst" (glossary), loaded at startup when changed (not committed: personal) |
+| `reference-photos/` | Optional: photos added to "Foto's" at startup and ticked by default (only its README is committed) |
+| `logs/`, `tunnel-link.txt` | Created by the start script: logs, and the latest public link (not committed) |
 
 ## Development
 
@@ -283,7 +313,8 @@ For reference; the web page uses these routes. "Admin" routes need you to be log
 | GET/PUT | `/api/merges`    | Read / save the word cloud variants `{ "merges": "paarden = paard, horses" }` (admin) |
 | GET    | `/api/providers`  | Which services are set up, and the OpenAI model (admin) |
 | DELETE | `/api/images/:filename` | Delete a generated image (admin) |
-| GET/PUT | `/api/context`   | Read / save the context `{ "context": "..." }` (admin) |
+| GET/PUT | `/api/context`   | Read / save the context `{ "context": "...", "glossary": "..." }` (admin) |
+| GET    | `/api/qr.svg?url=…` | QR code (SVG) for a share link (admin)          |
 | GET/POST | `/api/photos`   | List / upload a photo `{ "image": "data:image/jpeg;base64,...", "caption": "..." }` (admin) |
 | DELETE | `/api/photos/:id` | Delete a photo (admin)                           |
 | GET    | `/api/images`     | List generated images, newest first (admin)      |

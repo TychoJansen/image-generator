@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
@@ -16,6 +17,9 @@ from .config import Settings
 from .db import init_db
 from .errors import ApiError, api_error_handler, validation_error_handler
 from .routers import context, generate, images, photos, session, share, words
+from .storage import sync_reference_photos, sync_text_files
+
+logger = logging.getLogger(__name__)
 
 
 async def limit_body_size(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
@@ -36,6 +40,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         settings.images_dir.mkdir(parents=True, exist_ok=True)
         settings.photos_dir.mkdir(parents=True, exist_ok=True)
         init_db(settings.db_path)
+        # Fill "Altijd meesturen" and "Woordenlijst" from context.txt and woordenlijst.txt when they are new or changed.
+        for message in sync_text_files(settings):
+            logger.info(message)
+        # Make "Foto's" match the reference-photos folder (those photos are ticked by default on the page).
+        for message in sync_reference_photos(settings):
+            logger.info(message)
         yield
 
     app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)

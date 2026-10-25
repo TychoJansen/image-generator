@@ -570,6 +570,9 @@ async function loadPhotos() {
   try {
     const photos = await api('/api/photos');
     const container = $('photos');
+    // Keep the ticks of photos that were already shown; new photos from the reference-photos folder start ticked.
+    const previous = new Map([...container.querySelectorAll('input')].map((b) => [Number(b.value), b.checked]));
+    let ticked = [...previous.values()].filter(Boolean).length;
     container.innerHTML = '';
     for (const photo of photos) {
       const card = document.createElement('div');
@@ -578,6 +581,12 @@ async function loadPhotos() {
       const box = document.createElement('input');
       box.type = 'checkbox';
       box.value = photo.id;
+      if (previous.has(photo.id)) {
+        box.checked = previous.get(photo.id);
+      } else if (photo.fromFolder && ticked < MAX_PHOTOS) {
+        box.checked = true;
+        ticked++;
+      }
       const img = document.createElement('img');
       img.src = photo.url;
       img.alt = photo.caption || 'Foto';
@@ -589,7 +598,17 @@ async function loadPhotos() {
       caption.textContent = photo.caption || 'Geen beschrijving';
       caption.title = photo.caption;
       label.append(box, img, check, caption);
-      card.append(label, deleteButton('Foto verwijderen', () => removePhoto(photo.id)));
+      card.append(label);
+      if (photo.fromFolder) {
+        // Comes from the reference-photos folder: remove it there instead (it would come back on the next start).
+        const badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.textContent = 'Uit map';
+        badge.title = 'Uit de map reference-photos. Haal hem daar weg om hem te verwijderen.';
+        card.append(badge);
+      } else {
+        card.append(deleteButton('Foto verwijderen', () => removePhoto(photo.id)));
+      }
       container.append(card);
     }
     $('no-photos').hidden = photos.length > 0;

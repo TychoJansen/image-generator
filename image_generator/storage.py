@@ -1,23 +1,25 @@
-"""Files in the data folder: generated images and reference photos."""
+"""Files: generated images and reference photos in the data folder, and the text and photo files loaded at startup."""
 
 from __future__ import annotations
 
 import hashlib
+import io
 import re
 import secrets
-import shutil
-import sqlite3
 import time
 from pathlib import Path
 
+from PIL import Image, ImageOps
+
 from . import config
 from .config import Settings
-from .db import Database
+from .db import Database, Row
 from .errors import ApiError
 
 # Only plain generated names, so nothing outside the data folders can be read or deleted.
 IMAGE_NAME = re.compile(r"\d+\.(jpg|png)")
 PHOTO_NAME = re.compile(r"\d+-[0-9a-f]{8}(-large)?\.jpg")
+REFERENCE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}
 
 
 def large_name(filename: str) -> str:
@@ -52,70 +54,107 @@ def save_image(folder: Path, image: bytes) -> str:
     return filename
 
 
-def sync_context_file(settings: Settings) -> str | None:
-    """Put the context file's text into "Altijd meesturen" when the file is new or changed since the last load.
+def sync_text_file(path: Path | None, db: Database, setting: str, label: str, max_length: int) -> str | None:
+    """Put a text file into a setting when the file is new or changed since it was last loaded.
 
     Edits made in the app are kept until the file itself changes again. Returns a message for the log, or None.
     """
-    path = settings.context_file
     if path is None or not path.is_file():
         return None
     text = path.read_text(encoding="utf-8-sig").strip()  # utf-8-sig: also files saved with a BOM by Windows editors
     digest = hashlib.sha256(text.encode()).hexdigest()
+    if db.get_setting(f"{setting}_file_hash") == digest:
+        return None
+    if len(text) > max_length:
+        return (
+            f"{path.name} is {len(text)} characters; {label} allows {max_length}. "
+            "Not loaded: shorten the file and restart."
+        )
+    db.set_setting(setting, text)
+    db.set_setting(f"{setting}_file_hash", digest)
+    return f"Loaded {path.name} into {label}."
+
+
+def sync_text_files(settings: Settings) -> list[str]:
+    """Load context.txt into "Altijd meesturen" and woordenlijst.txt into "Woordenlijst" (when new or changed)."""
     db = Database(settings.db_path)
     try:
-        if db.get_setting("context_file_hash") == digest:
-            return None
-        if len(text) > config.MAX_CONTEXT_LENGTH:
-            return (
-                f'{path.name} is {len(text)} characters; "Altijd meesturen" allows {config.MAX_CONTEXT_LENGTH}. '
-                "Not loaded: shorten the file and restart."
-            )
-        db.set_setting("context", text)
-        db.set_setting("context_file_hash", digest)
-        return f'Loaded {path.name} into "Altijd meesturen".'
+        messages = [
+            sync_text_file(settings.context_file, db, "context", '"Altijd meesturen"', config.MAX_CONTEXT_LENGTH),
+            sync_text_file(settings.glossary_file, db, "glossary", '"Woordenlijst"', config.MAX_GLOSSARY_LENGTH),
+        ]
+        return [message for message in messages if message]
     finally:
         db.close()
 
 
-def is_empty_db(path: Path) -> bool:
-    """Whether the database has no words, photos or settings yet.
+def resize_photo(data: bytes) -> tuple[bytes, bytes]:
+    """A small JPEG (under 512x512, for Cloudflare) and a large one (up to 1024px, for OpenAI) of an image file.
 
-    The context loaded automatically from context.txt does not count: it is filled in again on the next start.
+    Raises OSError when Pillow cannot read the file.
     """
-    db = Database(path)
+    with Image.open(io.BytesIO(data)) as original:
+        image = ImageOps.exif_transpose(original).convert("RGB")  # phone photos: apply the rotation, drop alpha
+
+    def jpeg(max_side: int) -> bytes:
+        copy = image.copy()
+        copy.thumbnail((max_side, max_side))
+        out = io.BytesIO()
+        copy.save(out, format="JPEG", quality=90)
+        return out.getvalue()
+
+    return jpeg(config.MAX_PHOTO_SIDE), jpeg(config.MAX_LARGE_PHOTO_SIDE)
+
+
+def caption_from_filename(name: str) -> str:
+    """'Laureanne_and-Jerrel.jpg' -> 'Laureanne and Jerrel'."""
+    return re.sub(r"[_-]+", " ", Path(name).stem).strip()
+
+
+def _remove_photo(settings: Settings, db: Database, photo: Row) -> None:
+    db.delete_photo(photo["id"])
+    (settings.photos_dir / photo["filename"]).unlink(missing_ok=True)
+    (settings.photos_dir / large_name(photo["filename"])).unlink(missing_ok=True)
+
+
+def sync_reference_photos(settings: Settings) -> list[str]:
+    """Make "Foto's" match the reference-photos folder: add new files, replace changed ones, remove deleted ones.
+
+    The description of a photo is its file name. Returns messages for the log.
+    """
+    folder = settings.reference_photos_dir
+    if folder is None or not folder.is_dir():
+        return []
+    files = {p.name: p for p in sorted(folder.iterdir()) if p.is_file() and p.suffix.lower() in REFERENCE_SUFFIXES}
+    hashes = {name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in files.items()}
+    messages = []
+    db = Database(settings.db_path)
     try:
-        counts = [db.conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] for table in ("words", "photos")]
-        keys = {row[0] for row in db.conn.execute("SELECT key FROM settings")}
-        context_from_file = keys <= {"context", "context_file_hash"} and "context_file_hash" in keys
-        return counts == [0, 0] and (not keys or context_from_file)
-    except sqlite3.DatabaseError:
-        return False  # not a database we understand: leave it alone
+        imported = set()
+        for photo in db.photos_from_folder():
+            if hashes.get(photo["source"]) == photo["source_hash"]:
+                imported.add(photo["source"])
+                continue
+            _remove_photo(settings, db, photo)
+            if photo["source"] not in files:
+                messages.append(f"Removed reference photo {photo['source']} (no longer in {folder.name}/).")
+
+        for name, path in files.items():
+            if name in imported:
+                continue
+            if db.count_photos() >= config.MAX_PHOTOS_STORED:
+                messages.append(f"Skipped {name}: the app already has {config.MAX_PHOTOS_STORED} photos.")
+                continue
+            try:
+                small, large = resize_photo(path.read_bytes())
+            except (OSError, Image.DecompressionBombError):
+                messages.append(f"Skipped {name}: not an image that can be read (use JPG, PNG or WebP).")
+                continue
+            filename = new_photo_name()
+            (settings.photos_dir / filename).write_bytes(small)
+            (settings.photos_dir / large_name(filename)).write_bytes(large)
+            db.insert_photo(filename, caption_from_filename(name), source=name, source_hash=hashes[name])
+            messages.append(f"Added reference photo {name}.")
+        return messages
     finally:
         db.close()
-
-
-def copy_old_data(settings: Settings, old_root: Path) -> list[str]:
-    """Copy data from the old layout (Node.js version) into the data folder; never overwrites anything.
-
-    Old layout: words.db in the project folder, images in public/images/ and photos in uploads/.
-    """
-    copied = []
-    old_db = old_root / "words.db"
-    # An empty new database (the server was started before copying) may be replaced; one with data never.
-    if old_db.is_file() and (not settings.db_path.exists() or is_empty_db(settings.db_path)):
-        settings.db_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(old_db, settings.db_path)
-        copied.append(f"Copied {old_db} -> {settings.db_path}")
-    for old_folder, new_folder, pattern in [
-        (old_root / "public" / "images", settings.images_dir, IMAGE_NAME),
-        (old_root / "uploads", settings.photos_dir, PHOTO_NAME),
-    ]:
-        files = [p for p in old_folder.glob("*") if pattern.fullmatch(p.name)] if old_folder.is_dir() else []
-        new_files = [p for p in files if not (new_folder / p.name).exists()]
-        if new_files:
-            new_folder.mkdir(parents=True, exist_ok=True)
-            for path in new_files:
-                shutil.copy2(path, new_folder / path.name)
-            copied.append(f"Copied {len(new_files)} file(s) from {old_folder} -> {new_folder}")
-    return copied or ["Nothing to copy: no old data found, or it was already copied."]

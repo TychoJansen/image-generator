@@ -27,6 +27,8 @@ MAX_CAPTION_LENGTH = 100
 MAX_PHOTOS_STORED = 20
 MAX_PHOTOS_PER_PROMPT = 4
 MAX_PHOTO_BYTES = 1024 * 1024
+MAX_PHOTO_SIDE = 511  # the Cloudflare photo model needs reference images smaller than 512x512
+MAX_LARGE_PHOTO_SIDE = 1024  # the larger copy for OpenAI
 MAX_BODY_BYTES = 2 * 1024 * 1024  # room for one uploaded photo (small and large version)
 MAX_QR_URL_LENGTH = 500
 
@@ -55,6 +57,10 @@ class Settings:
     openai_model: str = DEFAULT_OPENAI_MODEL
     # Text file whose content is put into "Altijd meesturen" at startup (when it is new or changed); None = off.
     context_file: Path | None = None
+    # Text file whose content is put into "Woordenlijst" at startup (when it is new or changed); None = off.
+    glossary_file: Path | None = None
+    # Folder with reference photos that are synced into "Foto's" at startup and ticked by default; None = off.
+    reference_photos_dir: Path | None = None
 
     @property
     def db_path(self) -> Path:
@@ -82,6 +88,10 @@ class Settings:
             openai_api_key=os.getenv("OPENAI_API_KEY", ""),
             openai_model=os.getenv("OPENAI_IMAGE_MODEL") or DEFAULT_OPENAI_MODEL,
             context_file=ROOT / context_file if (context_file := os.getenv("CONTEXT_FILE", "context.txt")) else None,
+            glossary_file=ROOT / glossary if (glossary := os.getenv("GLOSSARY_FILE", "woordenlijst.txt")) else None,
+            reference_photos_dir=(
+                ROOT / folder if (folder := os.getenv("REFERENCE_PHOTOS_DIR", "reference-photos")) else None
+            ),
         )
 
     def missing_cloudflare(self) -> list[str]:

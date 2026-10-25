@@ -20,9 +20,14 @@ CREATE TABLE IF NOT EXISTS photos (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   filename TEXT NOT NULL,
   caption TEXT NOT NULL DEFAULT '',
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  source TEXT,       -- file name in the reference-photos folder; NULL for photos uploaded in the app
+  source_hash TEXT   -- fingerprint of that file, to notice when it changes
 );
 """
+
+# Columns added after the first version; older databases get them at startup.
+NEW_PHOTO_COLUMNS = {"source": "TEXT", "source_hash": "TEXT"}
 
 Row = dict[str, Any]
 
@@ -33,6 +38,10 @@ def init_db(path: Path) -> None:
     db = Database(path)
     try:
         db.conn.executescript(SCHEMA)
+        existing = {row["name"] for row in db.conn.execute("PRAGMA table_info(photos)")}
+        for column, kind in NEW_PHOTO_COLUMNS.items():
+            if column not in existing:
+                db.conn.execute(f"ALTER TABLE photos ADD COLUMN {column} {kind}")  # fixed names, no user input
     finally:
         db.close()
 
@@ -99,20 +108,29 @@ class Database:
 
     def list_photos(self) -> list[Row]:
         """All reference photos, newest first."""
-        return self._all("SELECT id, filename, caption FROM photos ORDER BY id DESC")
+        return self._all("SELECT id, filename, caption, source FROM photos ORDER BY id DESC")
 
     def count_photos(self) -> int:
         """How many reference photos are stored."""
         return self._one("SELECT COUNT(*) AS n FROM photos")["n"]
 
-    def insert_photo(self, filename: str, caption: str) -> Row:
-        """Store a photo record and return it."""
-        cursor = self.conn.execute("INSERT INTO photos (filename, caption) VALUES (?, ?)", (filename, caption))
+    def photos_from_folder(self) -> list[Row]:
+        """The photos that came from the reference-photos folder."""
+        return self._all("SELECT id, filename, caption, source, source_hash FROM photos WHERE source IS NOT NULL")
+
+    def insert_photo(
+        self, filename: str, caption: str, source: str | None = None, source_hash: str | None = None
+    ) -> Row:
+        """Store a photo record and return it; `source` is set for photos from the reference-photos folder."""
+        cursor = self.conn.execute(
+            "INSERT INTO photos (filename, caption, source, source_hash) VALUES (?, ?, ?, ?)",
+            (filename, caption, source, source_hash),
+        )
         return self.get_photo(cursor.lastrowid)
 
     def get_photo(self, photo_id: int | None) -> Row | None:
         """One photo record, or None if it does not exist."""
-        return self._one("SELECT id, filename, caption FROM photos WHERE id = ?", (photo_id,))
+        return self._one("SELECT id, filename, caption, source FROM photos WHERE id = ?", (photo_id,))
 
     def delete_photo(self, photo_id: int) -> None:
         """Delete a photo record (the files are removed by the caller)."""

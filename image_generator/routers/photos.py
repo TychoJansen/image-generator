@@ -18,8 +18,13 @@ router = APIRouter(dependencies=[AdminOnly])
 
 
 def photo_json(photo: Row) -> dict[str, Any]:
-    """A photo as the page expects it."""
-    return {"id": photo["id"], "caption": photo["caption"], "url": f"/photos/{photo['filename']}"}
+    """A photo as the page expects it; photos from the reference-photos folder are ticked by default."""
+    return {
+        "id": photo["id"],
+        "caption": photo["caption"],
+        "url": f"/photos/{photo['filename']}",
+        "fromFolder": photo["source"] is not None,
+    }
 
 
 @router.get("/api/photos")
@@ -46,6 +51,11 @@ def delete_photo(photo_id: str, db: DbDep, settings: SettingsDep) -> Response:
     photo = db.get_photo(to_id(photo_id))
     if not photo:
         raise ApiError(404, "Foto niet gevonden.")
+    if photo["source"] is not None:
+        raise ApiError(
+            400,
+            f"Deze foto komt uit de map reference-photos ({photo['source']}). " "Haal hem daar weg en herstart de app.",
+        )
     db.delete_photo(photo["id"])
     (settings.photos_dir / photo["filename"]).unlink(missing_ok=True)
     (settings.photos_dir / large_name(photo["filename"])).unlink(missing_ok=True)

@@ -43,9 +43,17 @@ On the Generate tab you can steer the image further:
     every start, the app loads it into the box **when the file is new or changed** since the last start. Edits you
     make in the app are kept until you change the file again. Use `CONTEXT_FILE` in `.env` for another file name, or
     leave it empty to switch this off. `context.txt` is in `.gitignore`, so your personal details stay off GitHub.
+  - **`woordenlijst.txt`**: the same for the **Woordenlijst** box: one line per name, loaded at every start when the
+    file is new or changed. Use `GLOSSARY_FILE` in `.env` for another file name, or leave it empty to switch this off.
 - **Photos**: upload photos of people, animals or places and tick up to 4 to use. You can give each photo a short
   description (*"Bram, our dog"*) so the AI knows who or what it shows. The browser shrinks photos to under
   512×512 pixels before uploading, as the model requires. Photos are stored in `data/photos/` and only you can see them.
+- **`reference-photos/` folder**: put photos you always want to use in this folder (JPG, PNG or WebP). At every start
+  the app adds them to **Foto's**, **ticked by default**, so they are sent with every image unless you untick them
+  (at most 4 per image). The **file name is the description** (`Laureanne and Jerrel.jpg` → "Laureanne and Jerrel").
+  Changed photos are replaced and removed ones disappear on the next start. These photos get an "Uit map" label and
+  cannot be deleted in the app: remove them from the folder instead. The photos stay off GitHub (`.gitignore`).
+  Note: ticked photos mean every image uses the photo model (Cloudflare: about 5 free images per day).
 
 ### Choosing the AI service
 
@@ -122,13 +130,6 @@ ADMIN_PASSWORD=choose-a-long-password
   OpenAI to keep faces from the reference photos as close as possible (`input_fidelity: high`).
 
 Save the file. `.env` is listed in `.gitignore`, so it is never committed to git.
-
-**5. Only if you used the earlier Node.js version:** copy its data (words, images, photos) into the new `data/` folder.
-This copies; it never moves or overwrites anything, so the old version keeps working:
-
-```powershell
-poetry run image-generator copy-old-data
-```
 
 ## Quick start: app + public link in one go (Windows)
 
@@ -264,16 +265,18 @@ Good to know:
 | `image_generator/prompt.py` | Building the prompt from words, context, glossary and photos |
 | `image_generator/auth.py` | Admin login, sessions and the lock after wrong passwords |
 | `image_generator/db.py` | The SQLite database |
-| `image_generator/storage.py` | Image and photo files, and copying data from the old layout |
+| `image_generator/storage.py` | Image and photo files, and loading `context.txt`, `woordenlijst.txt` and `reference-photos/` at startup |
 | `image_generator/errors.py` | How errors are sent to the page (`{"error": "..."}`) |
 | `image_generator/config.py` | Settings from `.env`, paths and limits |
-| `image_generator/__main__.py` | Command line: `image-generator` (start) and `image-generator copy-old-data` |
+| `image_generator/__main__.py` | Starts the server (`poetry run image-generator`) |
 | `tests/` | The tests (pytest) |
 | `start.cmd`, `start.ps1` | Start the app and a Cloudflare tunnel in one go, and copy the public link (Windows) |
 | `public/index.html`, `public/app.js`, `public/style.css` | The web page with all tabs |
 | `data/` | All data: `words.db`, `images/` (generated) and `photos/` (uploaded); created on first start, not committed |
 | `.env` / `.env.example` | Your settings and secrets / an empty template |
 | `context.txt` | Optional: your "Altijd meesturen" text, loaded at startup when changed (not committed: personal) |
+| `woordenlijst.txt` | Optional: your "Woordenlijst" (glossary), loaded at startup when changed (not committed: personal) |
+| `reference-photos/` | Optional: photos added to "Foto's" at startup and ticked by default (only its README is committed) |
 | `logs/`, `tunnel-link.txt` | Created by the start script: logs, and the latest public link (not committed) |
 
 ## Development

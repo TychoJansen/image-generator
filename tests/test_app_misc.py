@@ -83,14 +83,7 @@ def fake_main(monkeypatch, settings):
 def test_main_starts_uvicorn(fake_main, monkeypatch, capsys):
     monkeypatch.setenv("PORT", "3001")
     monkeypatch.delenv("HOST", raising=False)
-    main_module.main([])
+    main_module.main()
     assert fake_main["dotenv"].name == ".env"
     assert fake_main["run"] == {"host": "127.0.0.1", "port": 3001, "access_log": False}
     assert "Open http://localhost:3001" in capsys.readouterr().out
-
-
-def test_main_copy_old_data(fake_main, monkeypatch, capsys):
-    monkeypatch.setattr(main_module, "copy_old_data", lambda settings, root: ["Copied 3 file(s)"])
-    main_module.main(["copy-old-data"])
-    assert "run" not in fake_main
-    assert capsys.readouterr().out.splitlines() == ["Copied 3 file(s)"]

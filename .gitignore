@@ -1,14 +1,16 @@
+# Secrets and settings
 .env
-# All app data (database, generated images, reference photos)
+
+# All app data (database, generated images, uploaded photos)
 data/
-node_modules/
-# Old data locations of the Node.js version (still on disk if you used it)
 *.db
-public/images/
-uploads/
+
+# Personal files: prompt texts and reference photos (real names, faces and details)
 *.txt
-# Personal prompt context (real names and details)
 context.txt
+woordenlijst.txt
+reference-photos/*
+!reference-photos/README.md
 
 # Python
 .venv/

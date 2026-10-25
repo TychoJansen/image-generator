@@ -17,7 +17,7 @@ from .config import Settings
 from .db import init_db
 from .errors import ApiError, api_error_handler, validation_error_handler
 from .routers import context, generate, images, photos, session, share, words
-from .storage import sync_context_file
+from .storage import sync_reference_photos, sync_text_files
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +40,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         settings.images_dir.mkdir(parents=True, exist_ok=True)
         settings.photos_dir.mkdir(parents=True, exist_ok=True)
         init_db(settings.db_path)
-        # Fill "Altijd meesturen" from context.txt when that file is new or changed.
-        message = sync_context_file(settings)
-        if message:
+        # Fill "Altijd meesturen" and "Woordenlijst" from context.txt and woordenlijst.txt when they are new or changed.
+        for message in sync_text_files(settings):
+            logger.info(message)
+        # Make "Foto's" match the reference-photos folder (those photos are ticked by default on the page).
+        for message in sync_reference_photos(settings):
             logger.info(message)
         yield
 

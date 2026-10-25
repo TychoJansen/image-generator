@@ -71,6 +71,12 @@ On the Generate tab you choose per image between **Cloudflare** (free) and **Ope
   the image is still finished on the server and appears in the gallery shortly after.
 - New photo uploads are also stored in a larger version (up to 1024 px) that OpenAI uses. Cloudflare uses the small one.
 - Your choice of service and quality is remembered in your browser.
+- **Tijdmachine**: type a year under the Generate button and click **Genereer in dit jaar** (or press Enter) to make
+  one image of the same scene in that year: same people and animals, but clothing, buildings, vehicles and style of
+  that time. Use a minus sign for BC (`-10000` = Stone Age); allowed years are -10000 to 10000.
+  Tick **Leeftijd verandert mee** to also make everyone older or younger by the years between now and that year
+  (e.g. 2080: everyone about 54 years older; anyone not yet born in that year becomes a baby). The model uses the
+  ages from your context, so mention them there (e.g. "Laureanne, 30").
 
 Only use photos of people who are okay with it.
 

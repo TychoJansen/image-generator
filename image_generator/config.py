@@ -31,6 +31,7 @@ MAX_PHOTO_SIDE = 511  # the Cloudflare photo model needs reference images smalle
 MAX_LARGE_PHOTO_SIDE = 1024  # the larger copy for OpenAI
 MAX_BODY_BYTES = 2 * 1024 * 1024  # room for one uploaded photo (small and large version)
 MAX_QR_URL_LENGTH = 500
+TIME_MACHINE_YEARS = (-10000, 10000)  # the time machine accepts years in this range (negative = BC)
 
 SESSION_COOKIE = "admin_session"
 SESSION_SECONDS = 12 * 60 * 60

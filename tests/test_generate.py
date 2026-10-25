@@ -201,3 +201,31 @@ def test_missing_keys(make_client, settings, fake_api):
     openai = admin.post("/api/generate", json={"provider": "openai"}).json()["error"]
     assert openai.startswith("OPENAI_API_KEY ontbreekt.")
     assert fake_api.requests == []
+
+
+def test_time_machine(admin, fake_api):
+    word = add_word(admin, "taart")
+    result = admin.post("/api/generate", json={"ids": [word], "year": 2080}).json()
+    assert "as it would look in the year 2080:" in result["prompt"]
+    assert fake_api.last_json()["prompt"] == result["prompt"]
+    assert "Time machine" not in admin.post("/api/prompt", json={"ids": [word], "year": ""}).json()["prompt"]
+    assert "Time machine" not in admin.post("/api/prompt", json={"ids": [word], "year": None}).json()["prompt"]
+
+
+def test_time_machine_year_must_be_in_range(admin):
+    word = add_word(admin, "taart")
+    too_far = admin.post("/api/generate", json={"ids": [word], "year": 20000})
+    assert too_far.status_code == 400
+    assert too_far.json() == {"error": "Vul een jaartal in tussen -10000 en 10000."}
+    assert admin.post("/api/generate", json={"ids": [word], "year": "abc"}).json() == {"error": "Ongeldige invoer."}
+
+
+def test_time_machine_with_age_uses_this_year(admin):
+    from datetime import date
+
+    word = add_word(admin, "taart")
+    years = 2080 - date.today().year
+    prompt = admin.post("/api/prompt", json={"ids": [word], "year": 2080, "changeAge": True}).json()["prompt"]
+    assert f"everyone is {years} years older than now" in prompt
+    not_ticked = admin.post("/api/prompt", json={"ids": [word], "year": 2080, "changeAge": "yes"}).json()["prompt"]
+    assert "Age:" not in not_ticked  # only a real true counts

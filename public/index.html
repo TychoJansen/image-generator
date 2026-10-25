@@ -32,7 +32,7 @@
       <div class="card hero">
         <p class="eyebrow">Doe mee</p>
         <h1>Voeg een woord toe</h1>
-        <p class="lead">Vul een woord of korte zin in. Alle woorden samen worden gebruikt om een afbeelding te maken.</p>
+        <p class="lead">Vul een woord of korte zin in.</p>
         <form id="word-form" class="input-group">
           <input id="word-input" type="text" maxlength="50" placeholder="Bijv. zonsondergang, taart of 'een rode fiets'" autocomplete="off" />
           <button type="submit" class="btn primary">Toevoegen</button>
@@ -191,6 +191,19 @@
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9z" /></svg>
               Afbeelding genereren
             </button>
+            <div class="time-machine">
+              <label for="year">Tijdmachine</label>
+              <div class="input-group">
+                <input id="year" type="number" min="-10000" max="10000" step="1" placeholder="Jaartal, bijv. 1925 of 2080" />
+                <button id="time-machine-btn" type="button" class="btn secondary">Genereer in dit jaar</button>
+              </div>
+              <label class="check-row">
+                <input id="change-age" type="checkbox" />
+                Leeftijd verandert mee
+              </label>
+              <p id="age-hint" class="help age-hint" hidden></p>
+              <p class="help">Dezelfde scène in een ander jaar. Met een min-teken ga je naar vóór Christus, bijv. <code>-10000</code> voor de steentijd.</p>
+            </div>
             <p id="generate-info" class="notice success" hidden></p>
             <button id="preview-btn" type="button" class="btn small ghost">Prompt bekijken</button>
             <pre id="preview" class="preview" hidden></pre>

@@ -42,8 +42,8 @@ def test_folder_photos_are_added_resized_and_marked(make_client, settings, tmp_p
 
     photos = admin.get("/api/photos").json()
     assert sorted((p["caption"], p["fromFolder"]) for p in photos) == [
-        ("personx", True),
         ("dog", True),
+        ("personx", True),
     ]
     small = admin.get(photos[0]["url"]).content
     assert max(size_of(small)) == config.MAX_PHOTO_SIDE

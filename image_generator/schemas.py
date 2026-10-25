@@ -169,6 +169,10 @@ class SelectionIn(BaseModel):
     photo_ids: Ids = Field(default=[], alias="photoIds")
     provider: Annotated[str, BeforeValidator(lambda v: "openai" if v == "openai" else "cloudflare")] = "cloudflare"
     quality: Annotated[str, BeforeValidator(lambda v: v if v in config.OPENAI_QUALITIES else "medium")] = "medium"
+    # Time machine: show the scene in this year (negative = BC); empty = a normal image.
+    year: Annotated[int | None, BeforeValidator(lambda v: None if v in (None, "") else v)] = None
+    # Time machine: also make everyone older or younger by the number of years between now and `year`.
+    change_age: Annotated[bool, BeforeValidator(lambda v: v is True)] = Field(default=False, alias="changeAge")
 
     @field_validator("ids")
     @classmethod
@@ -177,6 +181,15 @@ class SelectionIn(BaseModel):
         if len(ids) > config.MAX_WORDS_PER_PROMPT:
             raise ValueError(f"Selecteer maximaal {config.MAX_WORDS_PER_PROMPT} woorden.")
         return ids
+
+    @field_validator("year")
+    @classmethod
+    def check_year(cls, year: int | None) -> int | None:
+        """Within the time machine's range."""
+        first, last = config.TIME_MACHINE_YEARS
+        if year is not None and not first <= year <= last:
+            raise ValueError(f"Vul een jaartal in tussen {first} en {last}.")
+        return year
 
     @field_validator("photo_ids")
     @classmethod

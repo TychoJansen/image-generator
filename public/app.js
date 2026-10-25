@@ -6,6 +6,7 @@ const MAX_LARGE_PHOTO_SIDE = 1024; // larger copy for OpenAI, which keeps faces 
 
 // Which image services are set up on the server (filled in after login).
 let providers = { cloudflare: true, openai: false, openaiModel: '' };
+let generating = false; // an image is being generated: both generate buttons wait
 
 // Small per-browser memory for the chosen service and quality; the page works fine without it.
 const remember = {
@@ -649,7 +650,8 @@ function updateModelInfo() {
   const openai = selectedProvider() === 'openai';
   $('quality-row').hidden = !openai;
   $('openai-missing').hidden = !openai || providers.openai;
-  $('generate-btn').disabled = openai && !providers.openai;
+  $('generate-btn').disabled = generating || (openai && !providers.openai);
+  $('time-machine-btn').disabled = $('generate-btn').disabled;
 
   if (openai) {
     $('model-name').textContent = providers.openaiModel || 'OpenAI';
@@ -813,24 +815,27 @@ $('preview-btn').addEventListener('click', async () => {
   }
 });
 
-$('generate-btn').addEventListener('click', async () => {
+// Generates one image; `year` (time machine) shows the same scene in that year.
+async function generateImage(year = null) {
   const selection = currentSelection();
   if (!selection) return;
   const { provider } = selection;
 
   $('preview').hidden = true;
   show($('generate-error'), '');
-  $('generate-btn').disabled = true;
+  generating = true;
+  updateModelInfo();
   $('result').hidden = true;
   $('idle').hidden = true;
+  const what = year === null ? 'Afbeelding' : `Afbeelding uit ${year < 0 ? `${-year} v.Chr.` : year}`;
   $('status-text').textContent =
-    provider === 'openai' ? 'Afbeelding wordt gegenereerd, dit kan tot een minuut duren…' : 'Afbeelding wordt gegenereerd…';
+    provider === 'openai' ? `${what} wordt gegenereerd, dit kan tot een minuut duren…` : `${what} wordt gegenereerd…`;
   $('status').hidden = false;
   try {
     await saveContext(); // so unsaved changes in the context box are used too
     const data = await api('/api/generate', {
       method: 'POST',
-      body: JSON.stringify(selection),
+      body: JSON.stringify({ ...selection, year, changeAge: year !== null && $('change-age').checked }),
     });
     $('result-prompt').textContent = data.prompt;
     $('result-img').src = data.url;
@@ -848,10 +853,46 @@ $('generate-btn').addEventListener('click', async () => {
       handleAdminError(err);
     }
   } finally {
+    generating = false;
     updateModelInfo();
     $('status').hidden = true;
     $('idle').hidden = !$('result').hidden;
   }
+}
+
+$('generate-btn').addEventListener('click', () => generateImage());
+
+// --- Time machine ---
+function timeMachine() {
+  const value = $('year').value.trim();
+  if (!value) {
+    show($('generate-error'), 'Vul eerst een jaartal in, bijv. 1925 of 2080.');
+    $('year').focus();
+    return;
+  }
+  generateImage(Number(value));
+}
+
+$('time-machine-btn').addEventListener('click', timeMachine);
+$('year').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') timeMachine();
 });
+
+// Shows what "Leeftijd verandert mee" means for the year that was typed, e.g. "2080: iedereen 54 jaar ouder".
+function updateAgeHint() {
+  const value = $('year').value.trim();
+  if (!$('change-age').checked || !value) {
+    show($('age-hint'), '');
+    return;
+  }
+  const years = Number(value) - new Date().getFullYear();
+  let hint = 'dezelfde leeftijd als nu';
+  if (years > 0) hint = `iedereen ${years} jaar ouder`;
+  if (years < 0) hint = `iedereen ${-years} jaar jonger (wie dan nog niet geboren is, wordt een baby)`;
+  show($('age-hint'), `${value}: ${hint}`);
+}
+
+$('year').addEventListener('input', updateAgeHint);
+$('change-age').addEventListener('change', updateAgeHint);
 
 showTab(location.hash.slice(1));

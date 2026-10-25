@@ -6,6 +6,7 @@ import base64
 import binascii
 import logging
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 
 from fastapi import APIRouter
@@ -56,7 +57,10 @@ def read_selection(db: Database, body: SelectionIn) -> Selection:
     texts = [word["text"] for word in words]
     captions = [photo["caption"] for photo in photos]
     glossary = match_glossary(db.get_setting("glossary"), texts + captions)
-    prompt = build_prompt(texts, captions, always, glossary, 1 if body.provider == "openai" else 0)
+    first_image_number = 1 if body.provider == "openai" else 0
+    prompt = build_prompt(
+        texts, captions, always, glossary, first_image_number, body.year, body.change_age, date.today().year
+    )
     return Selection(body.provider, body.quality, photos, prompt)
 
 

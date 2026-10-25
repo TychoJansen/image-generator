@@ -248,6 +248,7 @@ main {
 /* ---------- Form controls ---------- */
 input[type="text"],
 input[type="password"],
+input[type="number"],
 textarea {
   width: 100%;
   padding: 11px 14px;
@@ -543,6 +544,14 @@ textarea { resize: vertical; min-height: 96px; }
 .notice code { font-size: 0.85em; }
 
 .model { margin: 0; font-size: 0.9rem; }
+
+/* Time machine: the same scene in a year of your choice */
+.time-machine { display: grid; gap: 6px; }
+.time-machine label { font-weight: 600; }
+.time-machine .help { margin: 0; }
+.time-machine .check-row { display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; }
+.time-machine .check-row input { width: 16px; height: 16px; accent-color: var(--accent); }
+.time-machine .age-hint { color: var(--accent); font-weight: 500; }
 .model .muted { display: block; margin: 2px 0 0; font-size: 0.85rem; }
 
 .placeholder {

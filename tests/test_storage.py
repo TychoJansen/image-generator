@@ -54,6 +54,25 @@ def test_replaces_an_empty_new_database_but_never_one_with_data(tmp_path):
     assert copy_old_data(settings, old) == ["Nothing to copy: no old data found, or it was already copied."]
 
 
+def test_context_loaded_from_file_does_not_block_copying(tmp_path):
+    old = tmp_path / "old"
+    old.mkdir()
+    init_db(old / "words.db")
+    settings = Settings(data_dir=tmp_path / "data")
+    init_db(settings.db_path)
+    db = Database(settings.db_path)
+    db.set_setting("context", "from context.txt")
+    db.set_setting("context_file_hash", "abc")
+    db.close()
+    assert copy_old_data(settings, old)[0].startswith("Copied")
+
+    # A context typed in the app (no file hash) or a glossary is real data: never replaced.
+    db = Database(settings.db_path)
+    db.set_setting("glossary", "Whisky: a dog")
+    db.close()
+    assert copy_old_data(settings, old) == ["Nothing to copy: no old data found, or it was already copied."]
+
+
 def test_leaves_an_unreadable_database_alone(tmp_path):
     old = tmp_path / "old"
     old.mkdir()

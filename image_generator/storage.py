@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 import secrets
 import shutil
@@ -9,6 +10,7 @@ import sqlite3
 import time
 from pathlib import Path
 
+from . import config
 from .config import Settings
 from .db import Database
 from .errors import ApiError
@@ -50,14 +52,43 @@ def save_image(folder: Path, image: bytes) -> str:
     return filename
 
 
+def sync_context_file(settings: Settings) -> str | None:
+    """Put the context file's text into "Altijd meesturen" when the file is new or changed since the last load.
+
+    Edits made in the app are kept until the file itself changes again. Returns a message for the log, or None.
+    """
+    path = settings.context_file
+    if path is None or not path.is_file():
+        return None
+    text = path.read_text(encoding="utf-8-sig").strip()  # utf-8-sig: also files saved with a BOM by Windows editors
+    digest = hashlib.sha256(text.encode()).hexdigest()
+    db = Database(settings.db_path)
+    try:
+        if db.get_setting("context_file_hash") == digest:
+            return None
+        if len(text) > config.MAX_CONTEXT_LENGTH:
+            return (
+                f'{path.name} is {len(text)} characters; "Altijd meesturen" allows {config.MAX_CONTEXT_LENGTH}. '
+                "Not loaded: shorten the file and restart."
+            )
+        db.set_setting("context", text)
+        db.set_setting("context_file_hash", digest)
+        return f'Loaded {path.name} into "Altijd meesturen".'
+    finally:
+        db.close()
+
+
 def is_empty_db(path: Path) -> bool:
-    """Whether the database has no words, settings or photos yet."""
+    """Whether the database has no words, photos or settings yet.
+
+    The context loaded automatically from context.txt does not count: it is filled in again on the next start.
+    """
     db = Database(path)
     try:
-        return all(
-            db.conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 0  # fixed table names, no user input
-            for table in ("words", "settings", "photos")
-        )
+        counts = [db.conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] for table in ("words", "photos")]
+        keys = {row[0] for row in db.conn.execute("SELECT key FROM settings")}
+        context_from_file = keys <= {"context", "context_file_hash"} and "context_file_hash" in keys
+        return counts == [0, 0] and (not keys or context_from_file)
     except sqlite3.DatabaseError:
         return False  # not a database we understand: leave it alone
     finally:

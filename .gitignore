@@ -16,3 +16,7 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Start script output
+logs/
+tunnel-link.txt

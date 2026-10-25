@@ -53,6 +53,8 @@ class Settings:
     cloudflare_api_token: str = field(default="", repr=False)
     openai_api_key: str = field(default="", repr=False)
     openai_model: str = DEFAULT_OPENAI_MODEL
+    # Text file whose content is put into "Altijd meesturen" at startup (when it is new or changed); None = off.
+    context_file: Path | None = None
 
     @property
     def db_path(self) -> Path:
@@ -79,6 +81,7 @@ class Settings:
             cloudflare_api_token=os.getenv("CLOUDFLARE_API_TOKEN", ""),
             openai_api_key=os.getenv("OPENAI_API_KEY", ""),
             openai_model=os.getenv("OPENAI_IMAGE_MODEL") or DEFAULT_OPENAI_MODEL,
+            context_file=ROOT / context_file if (context_file := os.getenv("CONTEXT_FILE", "context.txt")) else None,
         )
 
     def missing_cloudflare(self) -> list[str]:
